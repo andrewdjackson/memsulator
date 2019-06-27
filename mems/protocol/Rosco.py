@@ -2,7 +2,6 @@
 import os
 from binascii import hexlify
 
-
 class Rosco(object):
     def __init__(self):
         self._version   = 'MNE101170'
@@ -57,27 +56,38 @@ class Rosco(object):
                 {'close_iac_by_one_step': b'\xfe'},
             ]
 
+        self._response = [
+            {'command': b'\x00', 'response': b'\x00\x00'},
+            {'command': b'\x1d', 'response': b'\x1d'},
+            {'command': b'\x1e', 'response': b'\x1e'},
+            {'command': b'\x7d', 'response': b'\x7d\x20\x10\x13\xFF\x92\x00\x57\xFF\xFF\x01\x00\x95\x64\x00\xFF\x5D\xFF\xFF\x30\x80\x80\x03\xFF\x1B\xC0\x21\x40\x29\x40\x37\x80\x17'},
+            {'command': b'\x7e', 'response': b'\x7e\x08'},
+            {'command': b'\x7f', 'response': b'\x7f\x05'},
+            {'command': b'\x75', 'response': b'\x75'},
+            {'command': b'\x80', 'response': b'\x80\x1C\x04\xAE\x4D\xFF\x4B\xFF\x25\x73\x26\x00\x10\x01\x00\x00\x00\x19\x90\x6C\x00\x14\x00\x47\x08\xB2\x10\x00\x00'},
+            {'command': b'\x82', 'response': b'\x82\x09\x9E\x1D\x00\x00\x60\x05\xFF\xFF'},
+            {'command': b'\xca', 'response': b'\xca'},
+            {'command': b'\xcd', 'response': b'\xcc\x00'},
+            {'command': b'\xcd', 'response': b'\xcd\x01'},
+            {'command': b'\xd0', 'response': b'\xd0\x99\x00\x03\x03'},
+            {'command': b'\xd1', 'response': b'\xd1\x41\x42\x4E\x4D\x50\x30\x30\x33\x99\x00\x03\x03\x41\x42\x4E\x4D\x50\x30\x30\x33\x99\x00\x03\x03\x41\x42\x4E\x4D\x50\x30\x30\x33\x99\x00\x03\x03'},
+            {'command': b'\xe7', 'response': b'\xe7\x02'},
+            {'command': b'\xe8', 'response': b'\xe8\x05\x26\x01\x00\x01'},
+            {'command': b'\xf4', 'response': b'\xf4\x00'},
+        ]
+
     def hex_to_string(self, code):
         request_code = hexlify(code)
         return str(request_code.decode("utf-8")).upper()
 
     def get_expected_result(self, code):
-        response = bytearray()
-        request_code = self.hex_to_string(code)
-
-        abspath = os.path.abspath(__file__)
-        dname = os.path.dirname(abspath)
-        responsefile = dname + '/responses/' + request_code + '.hex'
-
-        if os.path.isfile(responsefile):
-            with open(responsefile, mode='rb') as f:
-                data = f.read()
-                response.extend(data)
-        else:
-            response.extend(code)
-            response.extend(b'00')
-
+        response = self.get_response(code)
         return response
+
+    def get_response(self, code):
+        for response in self._response:
+            if code == response['command']:
+                return response['response']
 
     def get_command_code(self, command_name):
          for c in self._commands:

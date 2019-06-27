@@ -1,14 +1,16 @@
 import logging
-import os
 import time
 import subprocess
 import threading
+import mems.protocol.Rosco
 from binascii import hexlify
 
 from mems.interfaces.SerialInterface import SerialInterface
 
 class MemsEmulator(SerialInterface):
     def __init__(self, connection):
+        self._rosco = mems.protocol.Rosco.Rosco()
+
         self._serial_port_loopback = threading.Thread(target=self._create_virtual_ports)
         self._serial_port_loopback.start()
         time.sleep(1)
@@ -32,22 +34,7 @@ class MemsEmulator(SerialInterface):
         return str(request_code.decode("utf-8")).upper()
 
     def _get_response(self, code):
-        response = bytearray()
-        request_code = self.hex_to_string(code)
-
-        abspath = os.path.abspath(__file__)
-        dname = os.path.dirname(abspath)
-        responsefile = dname + '/protocol/responses/' + request_code + '.hex'
-
-        if os.path.isfile(responsefile):
-            with open(responsefile, mode='rb') as f:
-                data = f.read()
-                response.extend(data)
-        else:
-            response.extend(code)
-            response.extend(b'00')
-
-        return response
+        return self._rosco.get_response(code)
 
     def _create_virtual_ports(self):
         cmd = ['socat', '-d', '-d', 'pty,link=ttycodereader,raw,echo=0', 'pty,link=ttyecu,raw,echo=0']
