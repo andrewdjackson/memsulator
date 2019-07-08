@@ -31,19 +31,25 @@ class SerialInterface():
 
     def connect(self):
         # create a thread to listen for commands
-        self._connected = True
         self._listener = threading.Thread(target=self._send_receive_loop)
 
         # create the virtual ports for emulate MEMS
         # self._create_virtual_ports()
 
         # open port for listening
-        self.serial = serial.serial_for_url(self._port, **self._connection)
-        self.serial.flush()
-        # start listening for commands and responses
-        self._listener.start()
+        try:
+            self.serial = serial.serial_for_url(self._port, **self._connection)
+            self.serial.flush()
 
-        self._logger.debug('connected')
+            # start listening for commands and responses
+            self._listener.start()
+            self._logger.debug('connected')
+
+            self._connected = True
+        except:
+            self._logger.error('unable to connect to ' + self._port)
+            self._connected = False
+
 
     def disconnect(self):
         while self.has_data_to_send():

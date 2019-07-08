@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='memsulator',
-      version='1.0.2',
+      version='1.0.3',
       description='Rover MEMS 1.6 Serial Interface and Emulator',
       url='http://github.com/andrewdjackson/memsulator',
       author='Andrew Jackson',
