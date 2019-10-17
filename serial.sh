@@ -1,0 +1,1 @@
+socat -d -d pty,link=ttycodereader,raw,echo=0 pty,link=ttyecu,raw,echo=0
