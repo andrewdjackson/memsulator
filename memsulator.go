@@ -127,7 +127,7 @@ func main() {
 	fmt.Println("Listening for Code Reader on ", pcr_port)
 
 	mems.s = s
-	mems.s.Flush()
+	//mems.s.Flush()
 
 	// listen for commands and respond
 	for {

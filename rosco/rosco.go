@@ -3,6 +3,7 @@ package rosco
 import (
 	"bufio"
 	"encoding/hex"
+	"log"
 	"os"
 	"strings"
 )
@@ -24,7 +25,29 @@ func init() {
 	rosco["ca"] = []byte{0xCA}
 	rosco["75"] = []byte{0x75}
 	rosco["f0"] = []byte{0xF0, 0x00}
+
+	// heatbeat
 	rosco["f4"] = []byte{0xF4, 0x00}
+
+	// adjustments
+	rosco["7a"] = []byte{0x7A, 0x8A}
+	rosco["7c"] = []byte{0x7C, 0x8A}
+	rosco["79"] = []byte{0x79, 0x8A}
+	rosco["7b"] = []byte{0x7B, 0x8A}
+	rosco["8a"] = []byte{0x8A, 0x23}
+	rosco["89"] = []byte{0x89, 0x23}
+	rosco["92"] = []byte{0x92, 0x80}
+	rosco["91"] = []byte{0x91, 0x80}
+	rosco["94"] = []byte{0x94, 0x80}
+	rosco["93"] = []byte{0x93, 0x80}
+
+	//resets
+	rosco["fa"] = []byte{0x0f, 0x00}
+	rosco["0f"] = []byte{0x0f, 0x00}
+	rosco["cc"] = []byte{0xCC, 0x00}
+
+	// generic response
+	rosco["00"] = []byte{0x00, 0x00}
 }
 
 // Response returns an emulated response byte string
@@ -34,9 +57,7 @@ func Response(command []byte) []byte {
 	// if the command is a dataframe request and we have a response file
 	// then use the response file
 	if c == "80" || c == "7d" {
-		//if UseResponseFile {
 		return getLogResponse(c)
-		//}
 	}
 
 	// otherwise generate the response
@@ -44,7 +65,14 @@ func Response(command []byte) []byte {
 }
 
 func generateResponse(command string) []byte {
-	return rosco[command]
+	r := rosco[command]
+
+	if r == nil {
+		r = rosco["00"]
+		copy(r[0:], command)
+	}
+
+	return r
 }
 
 func getLogResponse(command string) []byte {
@@ -68,10 +96,20 @@ func getLogResponse(command string) []byte {
 			// remove all the spaces
 			response = strings.ReplaceAll(response, " ", "")
 			// remove all the LF
-			response = strings.TrimSuffix(response, "\n\r")
+			response = strings.ReplaceAll(response, "\n", "")
+			response = strings.ReplaceAll(response, "\r", "")
+
+			log.Printf("> %s", response)
 
 			// convert to byte array
 			data, err := hex.DecodeString(response)
+
+			// truncate to the right size
+			if command == "80" {
+				data = data[:29]
+			} else {
+				data = data[:33]
+			}
 
 			if err != nil {
 				panic(err)
