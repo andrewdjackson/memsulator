@@ -1,15 +1,16 @@
 package main
 
 import (
-	"andrewj.com/memsulator/readmems"
-	"andrewj.com/memsulator/rosco"
 	"fmt"
-	"github.com/mitchellh/go-homedir"
-	"github.com/tarm/serial"
 	"log"
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/andrewdjackson/memsulator/readmems"
+	"github.com/andrewdjackson/memsulator/rosco"
+	"github.com/mitchellh/go-homedir"
+	"github.com/tarm/serial"
 )
 
 var home, _ = homedir.Dir()
