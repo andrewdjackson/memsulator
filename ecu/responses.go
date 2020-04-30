@@ -87,7 +87,7 @@ func (mems *MemsConnection) getLogResponse(command string) []byte {
 
 	// load the data if not already loaded
 	if len(responseFile) == 0 {
-		responseFile, _ = mems.readResponseFile("response.log")
+		responseFile, _ = mems.readResponseFile("response.data")
 	}
 
 	for i := index; i < len(responseFile); i++ {
