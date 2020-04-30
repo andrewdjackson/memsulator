@@ -29,14 +29,14 @@ func init() {
 	responseMap["d0"] = []byte{0xD0, 0x99, 0x00, 0x03, 0x03}
 
 	// heatbeat
-	responseMap["f4"] = []byte{0xF4, 0x00}
+	responseMap["f4"] = []byte{0xf4, 0x00}
 
 	// adjustments
-	responseMap["7a"] = []byte{0x7A, 0x8A}
-	responseMap["7c"] = []byte{0x7C, 0x8A}
-	responseMap["79"] = []byte{0x79, 0x8A}
-	responseMap["7b"] = []byte{0x7B, 0x8A}
-	responseMap["8a"] = []byte{0x8A, 0x23}
+	responseMap["7a"] = []byte{0x7a, 0x8a}
+	responseMap["7c"] = []byte{0x7c, 0x8a}
+	responseMap["79"] = []byte{0x79, 0x8a}
+	responseMap["7b"] = []byte{0x7b, 0x8a}
+	responseMap["8a"] = []byte{0x8a, 0x23}
 	responseMap["89"] = []byte{0x89, 0x23}
 	responseMap["92"] = []byte{0x92, 0x80}
 	responseMap["91"] = []byte{0x91, 0x80}
@@ -44,9 +44,9 @@ func init() {
 	responseMap["93"] = []byte{0x93, 0x80}
 
 	//resets
-	responseMap["fa"] = []byte{0x0f, 0x00}
+	responseMap["fa"] = []byte{0xfa, 0x00}
 	responseMap["0f"] = []byte{0x0f, 0x00}
-	responseMap["cc"] = []byte{0xCC, 0x00}
+	responseMap["cc"] = []byte{0xcc, 0x00}
 
 	// generic response, expect command and single byte response
 	responseMap["00"] = []byte{0x00, 0x00}
