@@ -3,7 +3,7 @@ package ecu
 import (
 	"bufio"
 
-	"github.com/andrewdjackson/readmems/utils"
+	"github.com/andrewdjackson/memsulator/utils"
 	"github.com/tarm/serial"
 )
 
