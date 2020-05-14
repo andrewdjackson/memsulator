@@ -1,28 +1,37 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"os/exec"
 
 	"github.com/andrewdjackson/memsulator/ecu"
+	"github.com/andrewdjackson/memsulator/scenarios"
 	"github.com/andrewdjackson/memsulator/utils"
 	"github.com/mitchellh/go-homedir"
-	"github.com/tarm/serial"
 )
 
-var home, _ = homedir.Dir()
-var ecuPort = home + "/ttyecu"
-var fcrPort = home + "/ttycodereader"
-var virtualPortChan = make(chan bool)
+// Memsulator instance struct
+type Memsulator struct {
+	homefolder      string
+	ecuPort         string
+	fcrPort         string
+	virtualPortChan chan bool
+}
 
-type mems struct {
-	s *serial.Port
+// NewMemsulator creates a new instance
+func NewMemsulator() *Memsulator {
+	memsulator := &Memsulator{}
+
+	memsulator.homefolder, _ = homedir.Dir()
+	memsulator.ecuPort = memsulator.homefolder + "/ttyecu"
+	memsulator.fcrPort = memsulator.homefolder + "/ttycodereader"
+	memsulator.virtualPortChan = make(chan bool)
+
+	return memsulator
 }
 
 // fileExists reports whether the named file or directory exists.
-func fileExists(name string) bool {
+func (memsulator *Memsulator) fileExists(name string) bool {
 	if _, err := os.Stat(name); err != nil {
 		if os.IsNotExist(err) {
 			return false
@@ -31,17 +40,17 @@ func fileExists(name string) bool {
 	return true
 }
 
-func createVirtualSerialPorts() {
+func (memsulator *Memsulator) createVirtualSerialPorts() {
 	var cmd *exec.Cmd
 	utils.LogI.Printf("creating virtual ports")
 
 	// socat -d -d pty,link=ttycodereader,raw,echo=0 pty,link=ttyecu,raw,echo=0"
 	binary, lookErr := exec.LookPath("socat")
 	if lookErr != nil {
-		panic(lookErr)
+		utils.LogE.Fatalf("unable to find socat command, brew install socat? (%s)", lookErr)
 	}
 
-	args := []string{"-d", "-d", "pty,link=" + fcrPort + ",raw,echo=0", "pty,link=" + ecuPort + ",raw,echo=0"}
+	args := []string{"-d", "-d", "pty,link=" + memsulator.fcrPort + ",raw,echo=0", "pty,link=" + memsulator.ecuPort + ",raw,echo=0"}
 	env := os.Environ()
 	cmd = exec.Command(binary)
 	cmd.Args = args
@@ -50,37 +59,37 @@ func createVirtualSerialPorts() {
 	cmd.Stderr = os.Stderr
 
 	err := cmd.Start()
+
 	if err != nil {
-		log.Fatalf("cmd.Run() failed with %s\n", err)
-		panic(err)
+		utils.LogE.Fatalf("cmd.Run() failed with %s", err)
 	}
 
-	fmt.Println("Created virtual serial ports")
+	utils.LogI.Println("created virtual serial ports")
 }
 
 // CreateVirtualPorts for the FCR to connect to
-func CreateVirtualPorts() {
-	createVirtualSerialPorts()
+func (memsulator *Memsulator) CreateVirtualPorts() {
+	memsulator.createVirtualSerialPorts()
 
 	for {
-		if fileExists(ecuPort) {
+		if memsulator.fileExists(memsulator.ecuPort) {
 			utils.LogI.Println("virtual serial ports ready")
-			virtualPortChan <- true
+			memsulator.virtualPortChan <- true
 			break
 		}
 	}
 }
 
-func startECU() {
+func (memsulator *Memsulator) startECU() {
 	// wait for the virtual serial ports to be created
-	go CreateVirtualPorts()
+	go memsulator.CreateVirtualPorts()
 
 	// this blocks until the port is ready
-	ready := <-virtualPortChan
+	ready := <-memsulator.virtualPortChan
 
 	if ready {
 		mems := ecu.NewMemsConnection()
-		mems.Open(fcrPort)
+		mems.Open(memsulator.fcrPort)
 
 		// listen for commands from the FCR
 		go mems.ListenToFCRLoop()
@@ -97,6 +106,9 @@ func startECU() {
 }
 
 func main() {
-	//scenarios.LoadScenario()
-	startECU()
+	scenario := scenarios.NewScenario()
+	scenario.Load("scenarios/fullrun.csv")
+
+	memsulator := NewMemsulator()
+	memsulator.startECU()
 }

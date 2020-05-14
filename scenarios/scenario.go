@@ -5,30 +5,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/andrewdjackson/memsulator/utils"
 	"github.com/gocarina/gocsv"
 )
 
-/*
-type DateTime struct {
-	time.Time
-}
-
-// Convert the internal date as CSV string
-func (date *DateTime) MarshalCSV() (string, error) {
-	return date.Time.Format("15:04:05"), nil
-}
-
-// You could also use the standard Stringer interface
-func (date *DateTime) String() string {
-	return date.String() // Redundant, just for example
-}
-
-// Convert the CSV string as internal date
-func (date *DateTime) UnmarshalCSV(csv string) (err error) {
-	date.Time, err = time.Parse("15:04:05", csv)
-	return err
-}
-*/
 // MemsData is the mems information computed from dataframes 0x80 and 0x7d
 type MemsData struct {
 	Time                     string  `csv:"#time"`
@@ -91,12 +71,86 @@ type MemsData struct {
 	Dataframe80              string  `csv:"0x80_raw"`
 }
 
-func dec2hex(dec int) string {
-	if dec > 255 {
-		return fmt.Sprintf("%04x", dec)
-	} else {
-		return fmt.Sprintf("%02x", dec)
+// Scenario represents the scenario data
+type Scenario struct {
+	file *os.File
+	// Memsdata log
+	Memsdata []*MemsData
+	// Position in the log
+	Position int
+	// Count of items in the log
+	Count int
+}
+
+// NewScenario creates a new scenario
+func NewScenario() *Scenario {
+	scenario := &Scenario{}
+	// initialise the log
+	scenario.Memsdata = []*MemsData{}
+	// start at the beginning
+	scenario.Position = 0
+	// no items in the log
+	scenario.Count = 0
+
+	return scenario
+}
+
+// Open the CSV scenario file
+func (scenario *Scenario) openFile(filepath string) {
+	var err error
+
+	scenario.file, err = os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, os.ModePerm)
+
+	if err != nil {
+		utils.LogE.Printf("unable to open %s", err)
 	}
+
+	//defer scenario.file.Close()
+}
+
+// Load the scenario
+func (scenario *Scenario) Load(filepath string) {
+	scenario.openFile(filepath)
+
+	if err := gocsv.Unmarshal(scenario.file, &scenario.Memsdata); err != nil {
+		utils.LogE.Printf("unable to parse file %s", err)
+	} else {
+		scenario.Count = len(scenario.Memsdata)
+	}
+}
+
+// Next provides the next item in the log
+func (scenario *Scenario) Next() *MemsData {
+	item := scenario.Memsdata[scenario.Position]
+	scenario.Position = scenario.Position + 1
+
+	// if we pass the end, loop back to the start
+	if scenario.Position > scenario.Count {
+		scenario.Position = 0
+	}
+
+	return item
+}
+
+// ConvertCSVToMemsFCR takes Readmems CSV files and converts them into MemFCR format
+func ConvertCSVToMemsFCR() {
+	m := []*MemsData{}
+
+	in, err := os.OpenFile("scenarios/fullrun.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		fmt.Printf("open %s", err)
+	}
+	defer in.Close()
+
+	if err := gocsv.Unmarshal(in, &m); err != nil {
+		fmt.Printf("parse %s", err)
+	}
+
+	for _, d := range m {
+		recreateDataframes(d)
+	}
+
+	err = gocsv.MarshalFile(&m, in)
 }
 
 func recreateDataframes(data *MemsData) {
@@ -173,25 +227,4 @@ func recreateDataframes(data *MemsData) {
 
 	fmt.Printf("0x80: %s\n", data.Dataframe80)
 	fmt.Printf("0x7d: %s\n", data.Dataframe7d)
-}
-
-// LoadScenario loads
-func LoadScenario() {
-	m := []*MemsData{}
-
-	in, err := os.OpenFile("scenarios/fullrun.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		fmt.Printf("open %s", err)
-	}
-	defer in.Close()
-
-	if err := gocsv.Unmarshal(in, &m); err != nil {
-		fmt.Printf("parse %s", err)
-	}
-
-	for _, d := range m {
-		recreateDataframes(d)
-	}
-
-	err = gocsv.MarshalFile(&m, in)
 }
