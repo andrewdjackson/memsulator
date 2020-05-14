@@ -71,7 +71,7 @@ func CreateVirtualPorts() {
 	}
 }
 
-func main() {
+func startECU() {
 	// wait for the virtual serial ports to be created
 	go CreateVirtualPorts()
 
@@ -94,4 +94,9 @@ func main() {
 			}
 		}
 	}
+}
+
+func main() {
+	//scenarios.LoadScenario()
+	startECU()
 }
