@@ -8,10 +8,10 @@ import (
 )
 
 // ECUCommandTrace color coding for Commands sent to the ECU
-const ECUCommandTrace = "\u001b[38;5;200mECU_TX>\u001b[0m"
+const ECUCommandTrace = "\u001b[38;5;200mECU_RX<\u001b[0m"
 
 // ECUResponseTrace color coding for Reponses returned from the ECU
-const ECUResponseTrace = "\u001b[38;5;200mECU_RX<\u001b[0m"
+const ECUResponseTrace = "\u001b[38;5;200mECU_TX>\u001b[0m"
 
 // ReceiveFromWebTrace color coding for Messages sent to the Web
 const ReceiveFromWebTrace = "\u001b[38;5;21mWEB_RX<\u001b[0m"

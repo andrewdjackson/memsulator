@@ -97,7 +97,7 @@ func (mems *MemsConnection) ListenToFCRLoop() {
 				// send the command / response over the channel
 				mems.ReceivedFromFCR <- cr
 			} else {
-				utils.LogI.Printf("unexpected generated response for %x", cmd)
+				utils.LogI.Printf("%s unexpected generated response for %x", utils.ECUCommandTrace, cmd)
 			}
 		}
 	}
@@ -126,23 +126,22 @@ func (mems *MemsConnection) readSerial() []byte {
 			n, e = mems.SerialPort.Read(b)
 
 			if e != nil {
-				utils.LogI.Printf("error %s", e)
+				utils.LogI.Printf("%s error %s", utils.ECUCommandTrace, e)
 			} else {
 				// append the read bytes to the data frame
 				data = append(data, b[:n]...)
-				utils.LogI.Printf("data received %x", data)
 			}
 
 			// increment by the number of bytes read
 			count = count + n
 			if count > size {
-				utils.LogI.Printf("data frame size mismatch (received %d, expected %d)", count, size)
+				utils.LogI.Printf("%s data frame size mismatch (received %d, expected %d)", utils.ECUCommandTrace, count, size)
 			}
 		}
 	}
 
 	if n > 0 {
-		utils.LogI.Printf("FCR [%d] < %x", n, data)
+		utils.LogI.Printf("%s %x (%d)", utils.ECUCommandTrace, data, n)
 		mems.command = data
 	}
 
@@ -159,11 +158,11 @@ func (mems *MemsConnection) writeSerial(data []byte) {
 		n, e := mems.SerialPort.Write(data)
 
 		if e != nil {
-			utils.LogI.Printf("ECU Send Error %s", e)
+			utils.LogI.Printf("%s send Error %s", utils.ECUResponseTrace, e)
 		}
 
 		if n > 0 {
-			utils.LogI.Printf("ECU > %x (%d)", data, n)
+			utils.LogI.Printf("%s %x (%d)", utils.ECUResponseTrace, data, n)
 		}
 	}
 }
