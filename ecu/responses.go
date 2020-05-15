@@ -3,10 +3,11 @@ package ecu
 import (
 	"bufio"
 	"encoding/hex"
-	"github.com/andrewdjackson/memsulator/utils"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/andrewdjackson/memsulator/utils"
 )
 
 // UseResponseFile determine whether to return response sequentially from a response file
@@ -59,8 +60,12 @@ func (mems *MemsConnection) Response(command []byte) []byte {
 	// if the command is a dataframe request and we have a response file
 	// then use the response file
 	if c == "80" || c == "7d" {
+		// Read from ReadMems data log file
 		utils.LogI.Printf("reading from log file..")
 		return mems.getLogResponse(c)
+
+		// Read from Scenario file
+		//return mems.getResponseFromScenario(c)
 	}
 
 	// otherwise generate the response
@@ -87,7 +92,7 @@ func (mems *MemsConnection) getLogResponse(command string) []byte {
 
 	// load the data if not already loaded
 	if len(responseFile) == 0 {
-		responseFile, _ = mems.readResponseFile("response.data")
+		responseFile, _ = mems.readResponseFile("scenarios/response.data")
 	}
 
 	for i := index; i < len(responseFile); i++ {

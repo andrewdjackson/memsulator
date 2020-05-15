@@ -1,9 +1,11 @@
 package scenarios
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/andrewdjackson/memsulator/utils"
 	"github.com/gocarina/gocsv"
@@ -104,8 +106,6 @@ func (scenario *Scenario) openFile(filepath string) {
 	if err != nil {
 		utils.LogE.Printf("unable to open %s", err)
 	}
-
-	//defer scenario.file.Close()
 }
 
 // Load the scenario
@@ -116,6 +116,7 @@ func (scenario *Scenario) Load(filepath string) {
 		utils.LogE.Printf("unable to parse file %s", err)
 	} else {
 		scenario.Count = len(scenario.Memsdata)
+		utils.LogI.Printf("loaded scenario %s (%d dataframes)", filepath, scenario.Count)
 	}
 }
 
@@ -126,34 +127,125 @@ func (scenario *Scenario) Next() *MemsData {
 
 	// if we pass the end, loop back to the start
 	if scenario.Position > scenario.Count {
+		utils.LogW.Printf("reached end of scenario, restarting from beginning")
 		scenario.Position = 0
 	}
 
 	return item
 }
 
-// ConvertCSVToMemsFCR takes Readmems CSV files and converts them into MemFCR format
-func ConvertCSVToMemsFCR() {
-	m := []*MemsData{}
+// ConvertReadMemsLogToMemsFCR takes Readmems Log files and converts them into MemsFCR format
+func (scenario *Scenario) ConvertReadMemsLogToMemsFCR(filepath string) {
+	var m *MemsData
+	lines := scenario.readResponseFile(filepath)
+	startTime := time.Now()
 
-	in, err := os.OpenFile("scenarios/fullrun.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		fmt.Printf("open %s", err)
+	// convert to a compress byte string line by line
+	// from 80: 00 00...
+	// to 800000...
+	// skip header lines
+	for i := 3; i < len(lines); i++ {
+		line := lines[i]
+
+		if scenario.isACommandResponse(line) {
+			line = scenario.cleanCommandResponse(line)
+
+			if strings.HasPrefix(line, "80") {
+				m = &MemsData{}
+				m.Dataframe80 = line
+			}
+			if strings.HasPrefix(line, "7D") {
+				m.Dataframe7d = line
+			}
+
+			// convert to a struct, response order is 80, 7d so
+			// make sure we don't increment until we have both dataframes
+			if m.Dataframe80 != "" && m.Dataframe7d != "" {
+				startTime = startTime.Add(1 * time.Second)
+				m.Time = startTime.Format("15:04:05")
+				scenario.Memsdata = append(scenario.Memsdata, m)
+			}
+		}
 	}
-	defer in.Close()
 
-	if err := gocsv.Unmarshal(in, &m); err != nil {
-		fmt.Printf("parse %s", err)
-	}
-
-	for _, d := range m {
-		recreateDataframes(d)
-	}
-
-	err = gocsv.MarshalFile(&m, in)
 }
 
-func recreateDataframes(data *MemsData) {
+// SaveCSVFile saves the Memdata to a CSV file
+func (scenario *Scenario) SaveCSVFile(filepath string) {
+	file, _ := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, os.ModePerm)
+
+	err := gocsv.MarshalFile(&scenario.Memsdata, file)
+	if err != nil {
+		utils.LogI.Printf("error saving csv file %s", err)
+	}
+}
+
+// returns true if the line starts with an 80 or 75 which
+// indicate command responses
+func (scenario *Scenario) isACommandResponse(line string) bool {
+	if strings.HasPrefix(line, "80") {
+		return true
+	}
+
+	if strings.HasPrefix(line, "7D") {
+		return true
+	}
+
+	return false
+}
+
+// returns compacted and cleaned response
+func (scenario *Scenario) cleanCommandResponse(line string) string {
+	// remove the : character
+	line = strings.ReplaceAll(line, ":", "")
+	// remove all the spaces
+	line = strings.ReplaceAll(line, " ", "")
+	// remove all the LF
+	line = strings.ReplaceAll(line, "\n", "")
+	line = strings.ReplaceAll(line, "\r", "")
+
+	return line
+}
+
+// ReadMems logs are piped output from the readmems console and
+// in the format:
+// 7D: 00 00 ...
+// 80: 00 00 ...
+// this function reads the response file into an array of strings for
+// processing
+func (scenario *Scenario) readResponseFile(path string) []string {
+	file, err := os.Open(path)
+
+	if err != nil {
+		utils.LogE.Printf("unable to open %s", err)
+	}
+	defer file.Close()
+
+	var lines []string
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	return lines
+}
+
+// ConvertCSVToMemsFCR takes Readmems CSV files and converts them into MemsFCR format
+func (scenario *Scenario) ConvertCSVToMemsFCR(filepath string) {
+	// load the Readmems CSV
+	scenario.Load(filepath)
+
+	// recreate the Dataframes from the CSV values
+	for _, m := range scenario.Memsdata {
+		scenario.recreateDataframes(m)
+	}
+}
+
+// Recreate the Dataframe HEX data from the parameters
+// The CSV data fields are calculated from the raw data, we need to undo
+// those computations
+func (scenario *Scenario) recreateDataframes(data *MemsData) {
 	// undo all the computations and put all data back into integer/hex format
 	df80 := fmt.Sprintf("801C"+
 		"%04x%02x%02x%02x%02x%02x%02x%02x%02x%02x"+

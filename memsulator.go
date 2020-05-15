@@ -12,6 +12,7 @@ import (
 
 // Memsulator instance struct
 type Memsulator struct {
+	scenario        *scenarios.Scenario
 	homefolder      string
 	ecuPort         string
 	fcrPort         string
@@ -50,7 +51,7 @@ func (memsulator *Memsulator) createVirtualSerialPorts() {
 		utils.LogE.Fatalf("unable to find socat command, brew install socat? (%s)", lookErr)
 	}
 
-	args := []string{"-d", "-d", "pty,link=" + memsulator.fcrPort + ",raw,echo=0", "pty,link=" + memsulator.ecuPort + ",raw,echo=0"}
+	args := []string{"-d", "-d", "-lfecu.log", "pty,link=" + memsulator.fcrPort + ",raw,echo=0", "pty,link=" + memsulator.ecuPort + ",raw,echo=0"}
 	env := os.Environ()
 	cmd = exec.Command(binary)
 	cmd.Args = args
@@ -89,6 +90,7 @@ func (memsulator *Memsulator) startECU() {
 
 	if ready {
 		mems := ecu.NewMemsConnection()
+		mems.LoadScenario(memsulator.scenario)
 		mems.Open(memsulator.fcrPort)
 
 		// listen for commands from the FCR
@@ -107,8 +109,11 @@ func (memsulator *Memsulator) startECU() {
 
 func main() {
 	scenario := scenarios.NewScenario()
-	scenario.Load("scenarios/fullrun.csv")
+	scenario.Load("scenarios/coldstart.csv")
+	//scenario.ConvertReadMemsLogToMemsFCR("scenarios/response.data")
+	//scenario.SaveCSVFile("scenarios/response.csv")
 
 	memsulator := NewMemsulator()
+	memsulator.scenario = scenario
 	memsulator.startECU()
 }

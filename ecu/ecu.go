@@ -3,8 +3,10 @@ package ecu
 import (
 	"bufio"
 
+	"github.com/andrewdjackson/memsulator/scenarios"
+
 	"github.com/andrewdjackson/memsulator/utils"
-	"github.com/tarm/serial"
+	"go.bug.st/serial.v1"
 )
 
 // MemsCommandResponse communication pair
@@ -16,7 +18,7 @@ type MemsCommandResponse struct {
 // MemsConnection communtication structure for MEMS
 type MemsConnection struct {
 	// SerialPort the serial connection
-	SerialPort      *serial.Port
+	SerialPort      serial.Port
 	portReader      *bufio.Reader
 	ECUID           []byte
 	command         []byte
@@ -26,6 +28,7 @@ type MemsConnection struct {
 	Connected       bool
 	Initialised     bool
 	Exit            bool
+	responder       *Responder
 }
 
 // NewMemsConnection creates a new mems structure
@@ -42,21 +45,32 @@ func NewMemsConnection() *MemsConnection {
 // Open communiction via serial port
 func (mems *MemsConnection) Open(port string) {
 	// connect to the ecu
-	c := &serial.Config{Name: port, Baud: 9600}
+	mode := serial.Mode{
+		BaudRate: 9600,
+		Parity:   serial.NoParity,
+		DataBits: 8,
+		StopBits: serial.OneStopBit,
+	}
 
 	utils.LogI.Println("Opening ", port)
 
-	s, err := serial.OpenPort(c)
+	s, err := serial.Open(port, &mode)
+	//s, err := serial.OpenPort(c)
 	if err != nil {
 		utils.LogI.Printf("%s", err)
 	} else {
 		utils.LogI.Println("Listening on ", port)
 
 		mems.SerialPort = s
-		mems.SerialPort.Flush()
-
 		mems.Connected = true
 	}
+}
+
+// LoadScenario the emulation scenario
+func (mems *MemsConnection) LoadScenario(scenario *scenarios.Scenario) {
+	mems.responder = NewResponder()
+	mems.responder.LoadScenario(scenario)
+	utils.LogI.Printf("loaded scenario")
 }
 
 // ListenToFCRLoop listens for commands from the FCR
@@ -70,7 +84,8 @@ func (mems *MemsConnection) ListenToFCRLoop() {
 		// if we get a command the send a response
 		if len(cmd) > 0 {
 			// find the command response
-			response := mems.Response(cmd)
+			response := mems.responder.GetECUResponse(cmd)
+			//response := mems.Response(cmd)
 
 			if len(response) > 0 {
 				// send the response to the FCR
@@ -148,7 +163,7 @@ func (mems *MemsConnection) writeSerial(data []byte) {
 		}
 
 		if n > 0 {
-			utils.LogI.Printf("ECU > %x", data)
+			utils.LogI.Printf("ECU > %x (%d)", data, n)
 		}
 	}
 }
