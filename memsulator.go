@@ -51,7 +51,7 @@ func (memsulator *Memsulator) createVirtualSerialPorts() {
 		utils.LogE.Fatalf("unable to find socat command, brew install socat? (%s)", lookErr)
 	}
 
-	args := []string{"-d", "-d", "-v", "pty,link=" + memsulator.fcrPort + ",cfmakeraw,ignbrk=1,igncr=1,ignpar=1", "pty,link=" + memsulator.ecuPort + ",cfmakeraw,ignbrk=1,igncr=1,ignpar=1"}
+	args := []string{"-d", "-d", "pty,link=" + memsulator.fcrPort + ",cfmakeraw,ignbrk=1,igncr=1,ignpar=1", "pty,link=" + memsulator.ecuPort + ",cfmakeraw,ignbrk=1,igncr=1,ignpar=1"}
 	env := os.Environ()
 	cmd = exec.Command(binary)
 	cmd.Args = args
