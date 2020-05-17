@@ -53,8 +53,6 @@ func (responder *Responder) LoadScenario(scenario *scenarios.Scenario) {
 		pr.dataframe7d = responder.convertHexStringToByteArray(scenario.Memsdata[i].Dataframe7d)
 		pr.dataframe80 = responder.convertHexStringToByteArray(scenario.Memsdata[i].Dataframe80)
 
-		utils.LogI.Printf("loaded playbook entry %x, %x", pr.dataframe7d, pr.dataframe80)
-
 		responder.playbook.responses = append(responder.playbook.responses, pr)
 	}
 }

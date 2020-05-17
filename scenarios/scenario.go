@@ -3,6 +3,7 @@ package scenarios
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"time"
@@ -267,7 +268,7 @@ func (scenario *Scenario) recreateDataframes(data *MemsData) {
 		uint8(data.IdleSetPoint),
 		uint8(data.IdleHot),
 		uint8(data.Uk8011),
-		uint8(data.IACPosition),
+		uint8(math.Round(float64(data.IACPosition)*1.8)),
 		uint16(data.IdleSpeedDeviation),
 		uint8(data.IgnitionAdvanceOffset80),
 		uint8((data.IgnitionAdvance*2)+24),
@@ -286,7 +287,7 @@ func (scenario *Scenario) recreateDataframes(data *MemsData) {
 		uint8(data.Uk7d03),
 		uint8(data.AirFuelRatio*10),
 		uint8(data.DTC2),
-		uint8(data.LambdaVoltage),
+		uint8(data.LambdaVoltage/5),
 		uint8(data.LambdaFrequency),
 		uint8(data.LambdaDutycycle),
 		uint8(data.LambdaStatus),
@@ -298,8 +299,8 @@ func (scenario *Scenario) recreateDataframes(data *MemsData) {
 		uint8(data.IdleBasePosition),
 		uint8(data.Uk7d10),
 		uint8(data.DTC4),
-		uint8(data.IgnitionAdvanceOffset7d),
-		uint8(data.IdleSpeedOffset),
+		uint8(data.IgnitionAdvanceOffset7d+48),
+		uint8((data.IdleSpeedOffset+128)/25),
 		uint8(data.Uk7d14),
 		uint8(data.Uk7d15),
 		uint8(data.DTC5),

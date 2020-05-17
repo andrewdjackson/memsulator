@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -108,12 +110,35 @@ func (memsulator *Memsulator) startECU() {
 }
 
 func main() {
-	scenario := scenarios.NewScenario()
-	scenario.Load("scenarios/coldstart.csv")
-	//scenario.ConvertReadMemsLogToMemsFCR("scenarios/response.data")
-	//scenario.SaveCSVFile("scenarios/response.csv")
+	scenefile := flag.String("scenario", "scenarios/fullrun.csv", "scenario file to run")
+	filetype := flag.String("filetype", "csv", "use 'readmems' to convert from readmems log,\n'csv' to convert from readmems csv")
+	convert := flag.String("convert", "false", "use 'true' to convert the file")
+	flag.Parse()
 
-	memsulator := NewMemsulator()
-	memsulator.scenario = scenario
-	memsulator.startECU()
+	utils.LogI.Printf("using command line, scenario: %s, filetype: %s, convert: %s", *scenefile, *filetype, *convert)
+
+	scenario := scenarios.NewScenario()
+
+	if *convert == "false" {
+		utils.LogI.Printf("running scenario..")
+
+		scenario.Load(*scenefile)
+		memsulator := NewMemsulator()
+		memsulator.scenario = scenario
+		memsulator.startECU()
+	} else {
+		if *filetype == "readmems" {
+			utils.LogI.Printf("converting from readmems log file to MemsFCR CSV..")
+			scenario.ConvertReadMemsLogToMemsFCR(*scenefile)
+		} else {
+			utils.LogI.Printf("converting from readmems CSV file to MemsFCR CSV..")
+			scenario.ConvertCSVToMemsFCR(*scenefile)
+		}
+
+		save := fmt.Sprintf("%s.0.csv", *scenefile)
+		scenario.SaveCSVFile(save)
+	}
+	//memsulator := NewMemsulator()
+	//memsulator.scenario = scenario
+	//memsulator.startECU()
 }
