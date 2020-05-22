@@ -165,7 +165,7 @@ func (responder *Responder) buildResponseMap() {
 	responder.responseMap["93"] = []byte{0x93, 0x80}
 
 	//resets
-	responder.responseMap["fA"] = []byte{0xfa, 0x00}
+	responder.responseMap["FA"] = []byte{0xfa, 0x00}
 	responder.responseMap["0F"] = []byte{0x0f, 0x00}
 	responder.responseMap["CC"] = []byte{0xcc, 0x00}
 
