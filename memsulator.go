@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/andrewdjackson/memsulator/ecu"
 	"github.com/andrewdjackson/memsulator/scenarios"
@@ -26,8 +27,8 @@ func NewMemsulator() *Memsulator {
 	memsulator := &Memsulator{}
 
 	memsulator.homefolder, _ = homedir.Dir()
-	memsulator.ecuPort = memsulator.homefolder + "/ttyecu"
-	memsulator.fcrPort = memsulator.homefolder + "/ttycodereader"
+	memsulator.ecuPort = filepath.ToSlash(memsulator.homefolder + "/ttyecu")
+	memsulator.fcrPort = filepath.ToSlash(memsulator.homefolder + "/ttycodereader")
 	memsulator.virtualPortChan = make(chan bool)
 
 	return memsulator
@@ -53,7 +54,7 @@ func (memsulator *Memsulator) createVirtualSerialPorts() {
 		utils.LogE.Fatalf("unable to find socat command, brew install socat? (%s)", lookErr)
 	}
 
-	args := []string{"-d", "-d", "pty,link=" + memsulator.fcrPort + ",cfmakeraw,ignbrk=1,igncr=1,ignpar=1", "pty,link=" + memsulator.ecuPort + ",cfmakeraw,ignbrk=1,igncr=1,ignpar=1"}
+	args := []string{"-d", "-d", "pty,link='" + memsulator.fcrPort + "',cfmakeraw,ignbrk=1,igncr=1,ignpar=1", "pty,link='" + memsulator.ecuPort + "',cfmakeraw,ignbrk=1,igncr=1,ignpar=1"}
 	env := os.Environ()
 	cmd = exec.Command(binary)
 	cmd.Args = args
@@ -67,7 +68,7 @@ func (memsulator *Memsulator) createVirtualSerialPorts() {
 		utils.LogE.Fatalf("cmd.Run() failed with %s", err)
 	}
 
-	utils.LogI.Println("created virtual serial ports")
+	utils.LogI.Printf("created virtual serial ports (%s)", cmd.String())
 }
 
 // CreateVirtualPorts for the FCR to connect to
