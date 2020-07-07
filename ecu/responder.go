@@ -154,6 +154,7 @@ func (responder *Responder) buildResponseMap() {
 
 	// adjustments
 	responder.responseMap["7A"] = []byte{0x7a, 0x8a}
+	responder.responseMap["7B"] = []byte{0x7b, 0x1e}
 	responder.responseMap["7C"] = []byte{0x7c, 0x8a}
 	responder.responseMap["79"] = []byte{0x79, 0x8a}
 	responder.responseMap["7B"] = []byte{0x7b, 0x8a}
