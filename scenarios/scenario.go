@@ -23,9 +23,9 @@ type MemsData struct {
 	ManifoldAbsolutePressure float32 `csv:"80x07_map_kpa"`
 	BatteryVoltage           float32 `csv:"80x08_battery_voltage"`
 	ThrottlePotSensor        float32 `csv:"80x09_throttle_pot"`
-	IdleSwitch               int     `csv:"80x0A_idle_switch"`
-	AirconSwitch             int     `csv:"80x0B_uk1"`
-	ParkNeutralSwitch        int     `csv:"80x0C_park_neutral_switch"`
+	IdleSwitch               bool    `csv:"80x0A_idle_switch"`
+	AirconSwitch             bool    `csv:"80x0B_uk1"`
+	ParkNeutralSwitch        bool    `csv:"80x0C_park_neutral_switch"`
 	DTC0                     int     `csv:"80x0D-0E_fault_codes"`
 	DTC1                     int     `csv:"-"`
 	IdleSetPoint             int     `csv:"80x0F_idle_set_point"`
@@ -36,10 +36,10 @@ type MemsData struct {
 	IgnitionAdvanceOffset80  int     `csv:"80x15_ignition_advance_offset"`
 	IgnitionAdvance          float32 `csv:"80x16_ignition_advance"`
 	CoilTime                 float32 `csv:"80x17-18_coil_time"`
-	CrankshaftPositionSensor int     `csv:"80x19_crankshaft_position_sensor"`
+	CrankshaftPositionSensor bool    `csv:"80x19_crankshaft_position_sensor"`
 	Uk801a                   int     `csv:"80x1A_uk4"`
 	Uk801b                   int     `csv:"80x1B_uk5"`
-	IgnitionSwitch           int     `csv:"7dx01_ignition_switch"`
+	IgnitionSwitch           bool    `csv:"7dx01_ignition_switch"`
 	ThrottleAngle            int     `csv:"7dx02_throttle_angle"`
 	Uk7d03                   int     `csv:"7dx03_uk6"`
 	AirFuelRatio             float32 `csv:"7dx04_air_fuel_ratio"`
@@ -48,7 +48,7 @@ type MemsData struct {
 	LambdaFrequency          int     `csv:"7dx07_lambda_sensor_frequency"`
 	LambdaDutycycle          int     `csv:"7dx08_lambda_sensor_dutycycle"`
 	LambdaStatus             int     `csv:"7dx09_lambda_sensor_status"`
-	ClosedLoop               int     `csv:"7dx0A_closed_loop"`
+	ClosedLoop               bool    `csv:"7dx0A_closed_loop"`
 	LongTermFuelTrim         int     `csv:"7dx0B_long_term_fuel_trim"`
 	ShortTermFuelTrim        int     `csv:"7dx0C_short_term_fuel_trim"`
 	CarbonCanisterPurgeValve int     `csv:"7dx0D_carbon_canister_dutycycle"`
@@ -127,7 +127,7 @@ func (scenario *Scenario) Next() *MemsData {
 	scenario.Position = scenario.Position + 1
 
 	// if we pass the end, loop back to the start
-	if scenario.Position > scenario.Count {
+	if scenario.Position >= scenario.Count {
 		utils.LogW.Printf("reached end of scenario, restarting from beginning")
 		scenario.Position = 0
 	}
@@ -243,6 +243,14 @@ func (scenario *Scenario) ConvertCSVToMemsFCR(filepath string) {
 	}
 }
 
+func convertBooltoInt(b bool) uint8 {
+	if b {
+		return 1
+	}
+
+	return 0
+}
+
 // Recreate the Dataframe HEX data from the parameters
 // The CSV data fields are calculated from the raw data, we need to undo
 // those computations
@@ -260,9 +268,9 @@ func (scenario *Scenario) recreateDataframes(data *MemsData) {
 		uint8(data.ManifoldAbsolutePressure),
 		uint8(data.BatteryVoltage*10),
 		uint8(data.ThrottlePotSensor/0.02),
-		uint8(data.IdleSwitch),
-		uint8(data.AirconSwitch),
-		uint8(data.ParkNeutralSwitch),
+		convertBooltoInt(data.IdleSwitch),
+		convertBooltoInt(data.AirconSwitch),
+		convertBooltoInt(data.ParkNeutralSwitch),
 		uint8(data.DTC0),
 		uint8(data.DTC1),
 		uint8(data.IdleSetPoint),
@@ -273,7 +281,7 @@ func (scenario *Scenario) recreateDataframes(data *MemsData) {
 		uint8(data.IgnitionAdvanceOffset80),
 		uint8((data.IgnitionAdvance*2)+24),
 		uint16(data.CoilTime/0.002),
-		uint8(data.CrankshaftPositionSensor),
+		convertBooltoInt(data.CrankshaftPositionSensor),
 		uint8(data.Uk801a),
 		uint8(data.Uk801b),
 	)
@@ -282,7 +290,7 @@ func (scenario *Scenario) recreateDataframes(data *MemsData) {
 		"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"+
 		"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"+
 		"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-		uint8(data.IgnitionSwitch),
+		convertBooltoInt(data.IgnitionSwitch),
 		uint8(data.ThrottleAngle/6*10),
 		uint8(data.Uk7d03),
 		uint8(data.AirFuelRatio*10),
@@ -291,7 +299,7 @@ func (scenario *Scenario) recreateDataframes(data *MemsData) {
 		uint8(data.LambdaFrequency),
 		uint8(data.LambdaDutycycle),
 		uint8(data.LambdaStatus),
-		uint8(data.ClosedLoop),
+		convertBooltoInt(data.ClosedLoop),
 		uint8(data.LongTermFuelTrim),
 		uint8(data.ShortTermFuelTrim),
 		uint8(data.CarbonCanisterPurgeValve),
