@@ -50,8 +50,8 @@ func (responder *Responder) LoadScenario(scenario *scenarios.Scenario) {
 	// iterate the scenario extracting the raw dataframes into a sequential playbook
 	for i := 0; i < scenario.Count; i++ {
 		pr := PlaybookResponse{}
-		pr.dataframe7d = responder.convertHexStringToByteArray(scenario.Memsdata[i].Dataframe7d)
-		pr.dataframe80 = responder.convertHexStringToByteArray(scenario.Memsdata[i].Dataframe80)
+		pr.dataframe7d = responder.convertHexStringToByteArray(scenario.Rawdata[i].Dataframe7d)
+		pr.dataframe80 = responder.convertHexStringToByteArray(scenario.Rawdata[i].Dataframe80)
 
 		responder.playbook.responses = append(responder.playbook.responses, pr)
 	}

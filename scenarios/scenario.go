@@ -74,11 +74,19 @@ type MemsData struct {
 	Dataframe80              string  `csv:"0x80_raw"`
 }
 
+// RawData represents the raw data from the log file
+type RawData struct {
+	Dataframe7d string `csv:"0x7d_raw"`
+	Dataframe80 string `csv:"0x80_raw"`
+}
+
 // Scenario represents the scenario data
 type Scenario struct {
 	file *os.File
 	// Memsdata log
 	Memsdata []*MemsData
+	// Rawdata from log
+	Rawdata []*RawData
 	// Position in the log
 	Position int
 	// Count of items in the log
@@ -90,6 +98,7 @@ func NewScenario() *Scenario {
 	scenario := &Scenario{}
 	// initialise the log
 	scenario.Memsdata = []*MemsData{}
+	scenario.Rawdata = []*RawData{}
 	// start at the beginning
 	scenario.Position = 0
 	// no items in the log
@@ -113,17 +122,17 @@ func (scenario *Scenario) openFile(filepath string) {
 func (scenario *Scenario) Load(filepath string) {
 	scenario.openFile(filepath)
 
-	if err := gocsv.Unmarshal(scenario.file, &scenario.Memsdata); err != nil {
+	if err := gocsv.Unmarshal(scenario.file, &scenario.Rawdata); err != nil {
 		utils.LogE.Printf("unable to parse file %s", err)
 	} else {
-		scenario.Count = len(scenario.Memsdata)
+		scenario.Count = len(scenario.Rawdata)
 		utils.LogI.Printf("loaded scenario %s (%d dataframes)", filepath, scenario.Count)
 	}
 }
 
 // Next provides the next item in the log
-func (scenario *Scenario) Next() *MemsData {
-	item := scenario.Memsdata[scenario.Position]
+func (scenario *Scenario) Next() *RawData {
+	item := scenario.Rawdata[scenario.Position]
 	scenario.Position = scenario.Position + 1
 
 	// if we pass the end, loop back to the start
