@@ -33,9 +33,9 @@ func init() {
 	responseMap["f4"] = []byte{0xf4, 0x00}
 
 	// adjustments
-	responseMap["7a"] = []byte{0x7a, 0x8a}
+	responseMap["7A"] = []byte{0x7a, 0x89} // decrement STFT (default STFT is 138)
 	responseMap["7c"] = []byte{0x7c, 0x8a}
-	responseMap["79"] = []byte{0x79, 0x8a}
+	responseMap["79"] = []byte{0x79, 0x8b} // increment STFT (default STFT is 138)
 	responseMap["7b"] = []byte{0x7b, 0x8a}
 	responseMap["8a"] = []byte{0x8a, 0x23}
 	responseMap["89"] = []byte{0x89, 0x23}

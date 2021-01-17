@@ -153,22 +153,65 @@ func (responder *Responder) buildResponseMap() {
 	responder.responseMap["F4"] = []byte{0xf4, 0x00}
 
 	// adjustments
-	responder.responseMap["7A"] = []byte{0x7a, 0x8a}
-	responder.responseMap["7B"] = []byte{0x7b, 0x1e}
-	responder.responseMap["7C"] = []byte{0x7c, 0x8a}
-	responder.responseMap["79"] = []byte{0x79, 0x8a}
-	responder.responseMap["7B"] = []byte{0x7b, 0x8a}
-	responder.responseMap["8A"] = []byte{0x8a, 0x23}
-	responder.responseMap["89"] = []byte{0x89, 0x23}
-	responder.responseMap["92"] = []byte{0x92, 0x80}
-	responder.responseMap["91"] = []byte{0x91, 0x80}
-	responder.responseMap["94"] = []byte{0x94, 0x80}
-	responder.responseMap["93"] = []byte{0x93, 0x80}
+	responder.responseMap["79"] = []byte{0x79, 0x8b} // increment STFT (default is 138)
+	responder.responseMap["7A"] = []byte{0x7a, 0x89} // decrement STFT (default is 138)
+	responder.responseMap["7B"] = []byte{0x7b, 0x1f} // increment LTFT (default is 30)
+	responder.responseMap["7C"] = []byte{0x7c, 0x1d} // decrement LTFT (default is 30)
+	responder.responseMap["89"] = []byte{0x89, 0x24} // increment Idle Decay (default is 35)
+	responder.responseMap["8A"] = []byte{0x8a, 0x22} // decrement Idle Decay (default is 35)
+	responder.responseMap["91"] = []byte{0x91, 0x81} // increment Idle Speed  (default is 128)
+	responder.responseMap["92"] = []byte{0x92, 0x7f} // decrement Idle Speed (default is 128)
+	responder.responseMap["93"] = []byte{0x93, 0x81} // increment Ignition Advance Offset (default is 128)
+	responder.responseMap["94"] = []byte{0x94, 0x7f} // decrement Ignition Advance Offset (default is 128)
+	responder.responseMap["FD"] = []byte{0xfd, 0x81} // increment IAC (default is 128)
+	responder.responseMap["FE"] = []byte{0xfe, 0x7f} // decrement IAC (default is 128)
 
 	//resets
-	responder.responseMap["FA"] = []byte{0xfa, 0x00}
-	responder.responseMap["0F"] = []byte{0x0f, 0x00}
-	responder.responseMap["CC"] = []byte{0xcc, 0x00}
+	responder.responseMap["0F"] = []byte{0x0f, 0x00} // clear all adjustments
+	responder.responseMap["CC"] = []byte{0xcc, 0x00} // clear faults
+	responder.responseMap["FA"] = []byte{0xfa, 0x00} // clear all computed and learnt settings
+	responder.responseMap["FB"] = []byte{0xfb, 0x80} // Idle Air Control position
+
+	// actuators
+	responder.responseMap["11"] = []byte{0x11, 0x00} // fuel pump on
+	responder.responseMap["01"] = []byte{0x01, 0x00} // fuel pump off
+	responder.responseMap["12"] = []byte{0x12, 0x00} // ptc relay on
+	responder.responseMap["02"] = []byte{0x02, 0x00} // ptc relay off
+	responder.responseMap["13"] = []byte{0x13, 0x00} // ac relay on
+	responder.responseMap["03"] = []byte{0x03, 0x00} // ac relay off
+	responder.responseMap["18"] = []byte{0x18, 0x00} // purge valve on
+	responder.responseMap["08"] = []byte{0x08, 0x00} // purge vavle off
+	responder.responseMap["19"] = []byte{0x19, 0x00} // O2 heater on
+	responder.responseMap["09"] = []byte{0x09, 0x00} // O2 heater off
+	responder.responseMap["1B"] = []byte{0x1b, 0x00} // boost valve on
+	responder.responseMap["0B"] = []byte{0x0b, 0x00} // boost valve off
+	responder.responseMap["1D"] = []byte{0x1d}       // fan 1 on
+	responder.responseMap["0D"] = []byte{0x0d, 0x00} // fan 1 off
+	responder.responseMap["1E"] = []byte{0x1e}       // fan 2 on
+	responder.responseMap["0E"] = []byte{0x0e, 0x00} // fan 2 off
+	responder.responseMap["EF"] = []byte{0xef, 0x03} // test mpi injectors
+	responder.responseMap["F7"] = []byte{0xf7, 0x03} // test injectors
+	responder.responseMap["F8"] = []byte{0xf8, 0x02} // fire coil
+
+	// unknown command responses
+	responder.responseMap["65"] = []byte{0x65, 0x00}
+	responder.responseMap["6D"] = []byte{0x6d, 0x00}
+	responder.responseMap["7E"] = []byte{0x7e, 0x08}
+	responder.responseMap["7F"] = []byte{0x7f, 0x05}
+	responder.responseMap["82"] = []byte{0x82, 0x09, 0x9E, 0x1D, 0x00, 0x00, 0x60, 0x05, 0xFF, 0xFF}
+	responder.responseMap["CB"] = []byte{0xcb, 0x00}
+	responder.responseMap["CD"] = []byte{0xcd, 0x01}
+	responder.responseMap["D2"] = []byte{0xd2, 0x02, 0x01, 0x00, 0x01}
+	responder.responseMap["D3"] = []byte{0xd3, 0x02, 0x01, 0x00, 0x02}
+	responder.responseMap["E7"] = []byte{0xe7, 0x02}
+	responder.responseMap["E8"] = []byte{0xe8, 0x05, 0x26, 0x01, 0x00, 0x01}
+	responder.responseMap["ED"] = []byte{0xed, 0x00}
+	responder.responseMap["EE"] = []byte{0xee, 0x00}
+	responder.responseMap["F0"] = []byte{0xf0, 0x05}
+	responder.responseMap["F3"] = []byte{0xf3, 0x00}
+	responder.responseMap["F5"] = []byte{0xf5, 0x00}
+	responder.responseMap["F6"] = []byte{0xf6, 0x00}
+	responder.responseMap["FC"] = []byte{0xfc, 0x00}
 
 	// generic response, expect command and single byte response
 	responder.responseMap["00"] = []byte{0x00, 0x00}
