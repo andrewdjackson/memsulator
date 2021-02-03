@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/andrewdjackson/memsulator/ecu"
 	"github.com/andrewdjackson/memsulator/scenarios"
@@ -84,33 +85,45 @@ func (memsulator *Memsulator) CreateVirtualPorts() {
 }
 
 func (memsulator *Memsulator) startECU() {
-	// wait for the virtual serial ports to be created
-	go memsulator.CreateVirtualPorts()
+	var ready bool
 
-	// this blocks until the port is ready
-	ready := <-memsulator.virtualPortChan
+	if strings.HasSuffix(memsulator.fcrPort, "ttycodereader") {
+		// wait for the virtual serial ports to be created
+		go memsulator.CreateVirtualPorts()
+
+		// this blocks until the port is ready
+		ready = <-memsulator.virtualPortChan
+	} else {
+		utils.LogI.Printf("opening port %s", memsulator.fcrPort)
+		ready = true
+	}
 
 	if ready {
 		mems := ecu.NewMemsConnection()
 		mems.LoadScenario(memsulator.scenario)
 		mems.Open(memsulator.fcrPort)
 
-		// listen for commands from the FCR
-		go mems.ListenToFCRLoop()
+		if mems.Connected {
+			// listen for commands from the FCR
+			go mems.ListenToFCRLoop()
 
-		for {
-			// wait for the response
-			cr := <-mems.ReceivedFromFCR
-			// log unexpected responses
-			if len(cr.Response) == 0 {
-				utils.LogI.Printf("unexepected response for command %x (%x)", cr.Command, cr.Response)
+			for {
+				// wait for the response
+				cr := <-mems.ReceivedFromFCR
+				// log unexpected responses
+				if len(cr.Response) == 0 {
+					utils.LogI.Printf("unexepected response for command %x (%x)", cr.Command, cr.Response)
+				}
 			}
+		} else {
+			utils.LogE.Fatal("unable to connect, terminating")
 		}
 	}
 }
 
 func main() {
 	scenefile := flag.String("scenario", "scenarios/fullrun.csv", "scenario file to run")
+	port := flag.String("port", "", "serial communication port")
 	flag.Parse()
 
 	scenario := scenarios.NewScenario()
@@ -120,6 +133,9 @@ func main() {
 
 	scenario.Load(*scenefile)
 	memsulator := NewMemsulator()
+	if *port != "" {
+		memsulator.fcrPort = *port
+	}
 	memsulator.scenario = scenario
 	memsulator.startECU()
 }

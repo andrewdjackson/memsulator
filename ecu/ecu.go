@@ -58,6 +58,7 @@ func (mems *MemsConnection) Open(port string) {
 	//s, err := serial.OpenPort(c)
 	if err != nil {
 		utils.LogI.Printf("%s", err)
+		mems.Connected = false
 	} else {
 		utils.LogI.Println("Listening on ", port)
 
