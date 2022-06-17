@@ -2,8 +2,9 @@ package ecu
 
 import (
 	"bufio"
-
+	"encoding/hex"
 	"github.com/andrewdjackson/memsulator/scenarios"
+	"strings"
 
 	"github.com/andrewdjackson/memsulator/utils"
 	"go.bug.st/serial.v1"
@@ -29,6 +30,7 @@ type MemsConnection struct {
 	Initialised     bool
 	Exit            bool
 	responder       *Responder
+	MemsVersion     string
 }
 
 // NewMemsConnection creates a new mems structure
@@ -86,14 +88,12 @@ func (mems *MemsConnection) ListenToFCRLoop() {
 		if len(cmd) > 0 {
 			// find the command response
 			response := mems.responder.GetECUResponse(cmd)
-			//response := mems.Response(cmd)
 
 			if len(response) > 0 {
-				// send the response to the FCR
-				mems.writeSerial(response)
-
 				cr.Command = cmd
 				cr.Response = response
+
+				mems.sendResponse(cr)
 
 				// send the command / response over the channel
 				mems.ReceivedFromFCR <- cr
@@ -102,6 +102,20 @@ func (mems *MemsConnection) ListenToFCRLoop() {
 			}
 		}
 	}
+}
+
+func (mems *MemsConnection) sendResponse(cr MemsCommandResponse) {
+	// ignore 7D requests if the MEMS is Version 1.3
+	if mems.MemsVersion == "1.3" {
+		cmd := hex.EncodeToString(cr.Command)
+		if strings.ToUpper(cmd) == "7D" {
+			utils.LogI.Printf("0x7d command ignored by MEMS 1.3")
+			return
+		}
+	}
+
+	// send the response to the FCR
+	mems.writeSerial(cr.Response)
 }
 
 // readSerial read command sent from FCR

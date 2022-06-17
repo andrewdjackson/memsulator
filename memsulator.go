@@ -19,6 +19,7 @@ type Memsulator struct {
 	homefolder      string
 	ecuPort         string
 	fcrPort         string
+	memsVersion     string
 	virtualPortChan chan bool
 }
 
@@ -100,6 +101,7 @@ func (memsulator *Memsulator) startECU() {
 
 	if ready {
 		mems := ecu.NewMemsConnection()
+		mems.MemsVersion = memsulator.memsVersion
 		mems.LoadScenario(memsulator.scenario)
 		mems.Open(memsulator.fcrPort)
 
@@ -124,6 +126,7 @@ func (memsulator *Memsulator) startECU() {
 func main() {
 	scenefile := flag.String("scenario", "scenarios/nofaults.csv", "scenario file to run")
 	port := flag.String("port", "", "serial communication port")
+	memsVersion := flag.String("mems", "1.6", "mems version (1.3 or 1.6)")
 	flag.Parse()
 
 	scenario := scenarios.NewScenario()
@@ -135,6 +138,10 @@ func main() {
 	memsulator := NewMemsulator()
 	if *port != "" {
 		memsulator.fcrPort = *port
+	}
+	if *memsVersion != "" {
+		memsulator.memsVersion = *memsVersion
+
 	}
 	memsulator.scenario = scenario
 	memsulator.startECU()
