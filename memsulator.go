@@ -124,7 +124,7 @@ func (memsulator *Memsulator) startECU() {
 }
 
 func main() {
-	scenefile := flag.String("scenario", "scenarios/nofaults.csv", "scenario file to run")
+	scenefile := flag.String("scenario", "scenarios/default.csv", "scenario file to run")
 	port := flag.String("port", "", "serial communication port")
 	memsVersion := flag.String("mems", "1.6", "mems version (1.3 or 1.6)")
 	flag.Parse()
