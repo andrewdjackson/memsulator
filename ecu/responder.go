@@ -76,8 +76,10 @@ func (responder *Responder) GetECUResponse(cmd []byte) []byte {
 			if len(data) >= 33 {
 				// truncate to the right size
 				data = data[:33]
-				responder.playbook.servedDataframe7d = true
+			} else {
+				data = responder.playbook.responses[position-1].dataframe7d
 			}
+			responder.playbook.servedDataframe7d = true
 		}
 
 		if command == "80" {
@@ -85,8 +87,10 @@ func (responder *Responder) GetECUResponse(cmd []byte) []byte {
 			if len(data) >= 29 {
 				// truncate to the right size
 				data = data[:29]
-				responder.playbook.servedDataframe80 = true
+			} else {
+				data = responder.playbook.responses[position-1].dataframe80
 			}
+			responder.playbook.servedDataframe80 = true
 		}
 
 		// served both dataframes from this position, index on to the next position
