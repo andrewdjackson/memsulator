@@ -146,11 +146,6 @@ func (responder *Responder) generateECUResponse(command string) []byte {
 
 // build the response map for generated responses
 func (responder *Responder) buildResponseMap() {
-	// kline responses
-	responder.responseMap["00"] = []byte{0x00, 0x00, 0x00, 0x55, 0x76, 0x83}
-	responder.responseMap["55"] = []byte{0x55, 0x76, 0x83}
-	responder.responseMap["7C"] = []byte{0x7C, 0xE9}
-
 	// Response formats for commands that do not respond with the format [COMMAND][VALUE]
 	// Generally these are either part of the initialisation sequence or are ECU data frames
 	responder.responseMap["0A"] = []byte{0x0A}
@@ -226,4 +221,9 @@ func (responder *Responder) buildResponseMap() {
 	responder.responseMap["F5"] = []byte{0xf5, 0x00}
 	responder.responseMap["F6"] = []byte{0xf6, 0x00}
 	responder.responseMap["FC"] = []byte{0xfc, 0x00}
+
+	// kline responses
+	responder.responseMap["00"] = []byte{0x00, 0x00, 0x00, 0x55, 0x76, 0x83}
+	responder.responseMap["55"] = []byte{0x55, 0x76, 0x83}
+	responder.responseMap["7C"] = []byte{0x7C, 0xE9}
 }
