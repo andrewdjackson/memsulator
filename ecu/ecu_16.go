@@ -4,26 +4,13 @@ import (
 	"bufio"
 	"encoding/hex"
 	"github.com/andrewdjackson/memsulator/scenarios"
-	"strings"
-
 	"github.com/andrewdjackson/memsulator/utils"
 	"go.bug.st/serial.v1"
+	"strings"
 )
 
-type ECU interface {
-	Open(port string)
-	LoadScenario(scenario *scenarios.Scenario)
-	Listen()
-}
-
-// CommandResponse communication pair
-type CommandResponse struct {
-	Command  []byte
-	Response []byte
-}
-
 // MemsConnection communication structure for MEMS
-type MemsConnection struct {
+type ECU16 struct {
 	// SerialPort the serial connection
 	SerialPort      serial.Port
 	portReader      *bufio.Reader
@@ -40,8 +27,8 @@ type MemsConnection struct {
 }
 
 // NewMemsConnection creates a new mems structure
-func NewMemsConnection() *MemsConnection {
-	m := &MemsConnection{}
+func NewECU16() *ECU16 {
+	m := &ECU16{}
 	m.Connected = false
 	m.Initialised = false
 	m.SendToFCR = make(chan CommandResponse)
@@ -50,12 +37,8 @@ func NewMemsConnection() *MemsConnection {
 	return m
 }
 
-// Open communiction via serial port
-func (mems *MemsConnection) Open(port string) {
-	if mems.MemsVersion == "1.9" {
-		mems.doWakeUp(port)
-	}
-
+// Open communication via serial port
+func (mems *ECU16) Open(port string) {
 	// connect to the ecu
 	mode := serial.Mode{
 		BaudRate: 9600,
@@ -67,7 +50,7 @@ func (mems *MemsConnection) Open(port string) {
 	utils.LogI.Println("Opening ", port)
 
 	s, err := serial.Open(port, &mode)
-
+	//s, err := serial.OpenPort(c)
 	if err != nil {
 		utils.LogI.Printf("%s", err)
 		mems.Connected = false
@@ -80,14 +63,14 @@ func (mems *MemsConnection) Open(port string) {
 }
 
 // LoadScenario the emulation scenario
-func (mems *MemsConnection) LoadScenario(scenario *scenarios.Scenario) {
+func (mems *ECU16) LoadScenario(scenario *scenarios.Scenario) {
 	mems.responder = NewResponder()
 	mems.responder.LoadScenario(scenario)
 	utils.LogI.Printf("loaded scenario")
 }
 
 // Listen listens for commands from the FCR
-func (mems *MemsConnection) Listen() {
+func (mems *ECU16) Listen() {
 	var cr CommandResponse
 
 	for {
@@ -114,7 +97,7 @@ func (mems *MemsConnection) Listen() {
 	}
 }
 
-func (mems *MemsConnection) sendResponse(cr CommandResponse) {
+func (mems *ECU16) sendResponse(cr CommandResponse) {
 	// ignore 7D requests if the MEMS is Version 1.3
 	if mems.MemsVersion == "1.3" {
 		cmd := hex.EncodeToString(cr.Command)
@@ -130,7 +113,7 @@ func (mems *MemsConnection) sendResponse(cr CommandResponse) {
 
 // readSerial read command sent from FCR
 // read 1 byte at a time until we have all the expected bytes
-func (mems *MemsConnection) readSerial() []byte {
+func (mems *ECU16) readSerial() []byte {
 	var n int
 	var e error
 
@@ -174,7 +157,7 @@ func (mems *MemsConnection) readSerial() []byte {
 }
 
 // writeSerial write response from ECU to FCR
-func (mems *MemsConnection) writeSerial(data []byte) {
+func (mems *ECU16) writeSerial(data []byte) {
 	if mems.SerialPort != nil {
 		// save the sent response
 		mems.response = data
@@ -188,26 +171,6 @@ func (mems *MemsConnection) writeSerial(data []byte) {
 
 		if n > 0 {
 			utils.LogI.Printf("%s %x (%d)", utils.ECUResponseTrace, data, n)
-		}
-	}
-}
-
-func (mems *MemsConnection) doWakeUp(port string) {
-	mode := serial.Mode{
-		BaudRate: 5,
-		Parity:   serial.NoParity,
-		DataBits: 8,
-		StopBits: serial.OneStopBit,
-	}
-
-	if s, err := serial.Open(port, &mode); err != nil {
-		utils.LogI.Printf("%s", err)
-	} else {
-		utils.LogI.Println("Listening for wakeup ", port)
-		mems.SerialPort = s
-		for i := 0; i < 8; i++ {
-			cmd := mems.readSerial()
-			utils.LogI.Println("RX for wakeup ", cmd)
 		}
 	}
 }

@@ -107,7 +107,7 @@ func (memsulator *Memsulator) startECU() {
 
 		if mems.Connected {
 			// listen for commands from the FCR
-			go mems.ListenToFCRLoop()
+			go mems.Listen()
 
 			for {
 				// wait for the response
@@ -126,7 +126,7 @@ func (memsulator *Memsulator) startECU() {
 func main() {
 	scenefile := flag.String("scenario", "scenarios/default.csv", "scenario file to run")
 	port := flag.String("port", "", "serial communication port")
-	memsVersion := flag.String("mems", "1.6", "mems version (1.3 or 1.6)")
+	memsVersion := flag.String("mems", "1.6", "mems version (1.3, 1.6 or 1.9)")
 	flag.Parse()
 
 	scenario := scenarios.NewScenario()
