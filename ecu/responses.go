@@ -103,10 +103,11 @@ func init() {
 // Response returns an emulated response byte string
 func (mems *MemsConnection) Response(command []byte) []byte {
 	c := hex.EncodeToString(command)
+	c = strings.ToUpper(c)
 
 	// if the command is a dataframe request and we have a response file
 	// then use the response file
-	if c == "80" || c == "7d" {
+	if c == "80" || c == "7D" {
 		// Read from ReadMems data log file
 		utils.LogI.Printf("reading from log file..")
 		return mems.getLogResponse(c)
@@ -123,7 +124,7 @@ func (mems *MemsConnection) generateResponse(command string) []byte {
 	r := responseMap[command]
 
 	if r == nil {
-		r = responseMap["00"]
+		r = responseMap["FF"]
 		copy(r[0:], command)
 	}
 
