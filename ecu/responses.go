@@ -54,6 +54,8 @@ func init() {
 	responseMap["FB"] = []byte{0xfb, 0x80} // Idle Air Control Position
 
 	// actuators
+	responseMap["10"] = []byte{0x10, 0x00} // temperature gauge on
+	responseMap["00"] = []byte{0x00, 0x00} // temperature gauge off
 	responseMap["11"] = []byte{0x11, 0x00} // fuel pump on
 	responseMap["01"] = []byte{0x01, 0x00} // fuel pump off
 	responseMap["12"] = []byte{0x12, 0x00} // ptc relay on
@@ -95,7 +97,7 @@ func init() {
 	responseMap["FC"] = []byte{0xfc, 0x00}
 
 	// generic response, expect command and single byte response
-	responseMap["00"] = []byte{0x00, 0x00}
+	responseMap["FF"] = []byte{0xFF, 0x00}
 }
 
 // Response returns an emulated response byte string
