@@ -12,6 +12,5 @@ require (
 require (
 	github.com/creack/goselect v0.1.2 // indirect
 	github.com/distributed/sers v1.1.0 // indirect
-	go.bug.st/serial v1.6.2 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 )

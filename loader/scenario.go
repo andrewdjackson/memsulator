@@ -32,30 +32,32 @@ func NewScenario() *Scenario {
 	}
 }
 
-func (scenario *Scenario) Load(filepath string) {
-	if _, err := os.Stat(filepath); err != nil {
-		log.Errorf("unable to find file %s (%e)", filepath, err)
-		return
-	}
+func (scenario *Scenario) Load(filepath string) error {
+	var err error
 
-	scenario.openFile(filepath)
+	if err = scenario.openFile(filepath); err == nil {
 
-	if err := gocsv.Unmarshal(scenario.file, &scenario.csvFields); err != nil {
-		log.Errorf("unable to parse file %s", err)
-	} else {
-		scenario.Count = len(scenario.csvFields)
-		if err = scenario.convertFieldsToDataframes(); err == nil {
-			log.Infof("loaded scenario %s (%d dataframes)", filepath, scenario.Count)
+		if err := gocsv.Unmarshal(scenario.file, &scenario.csvFields); err != nil {
+			log.Errorf("unable to parse file %s", err)
+		} else {
+			scenario.Count = len(scenario.csvFields)
+			if err = scenario.convertFieldsToDataframes(); err == nil {
+				log.Infof("loaded scenario %s (%d dataframes)", filepath, scenario.Count)
+			}
 		}
 	}
+
+	return err
 }
 
-func (scenario *Scenario) openFile(filepath string) {
+func (scenario *Scenario) openFile(filepath string) error {
 	var err error
 
 	if scenario.file, err = os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, os.ModePerm); err != nil {
 		log.Errorf("unable to open %s", err)
 	}
+
+	return err
 }
 
 func (scenario *Scenario) convertFieldsToDataframes() error {

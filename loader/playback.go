@@ -54,7 +54,7 @@ func (playback *Playback) NextDataframe(command []byte) []byte {
 
 	if command[0] == 0x7d {
 		playback.dataframe7dSent = true
-		dataframe = playback.scenario.dataframes[playback.position].Dataframe80
+		dataframe = playback.scenario.dataframes[playback.position].Dataframe7d
 	}
 
 	return dataframe
