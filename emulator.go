@@ -22,8 +22,10 @@ func main() {
 	if connected, err := emulator.Connect(*port); err == nil {
 		if connected {
 			for {
-				if err := emulator.ReceiveAndSend(); err != nil {
+				if data, err := emulator.ReceiveAndSend(); err != nil {
 					log.Warnf("error %s", err)
+				} else {
+					log.Infof("data %x", data)
 				}
 			}
 		}
