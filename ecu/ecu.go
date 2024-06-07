@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/andrewdjackson/memsulator/utils"
-	"go.bug.st/serial.v1"
+	"go.bug.st/serial"
 )
 
 type ECU interface {

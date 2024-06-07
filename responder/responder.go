@@ -4,7 +4,7 @@ import (
 	"github.com/andrewdjackson/memsulator/loader"
 	"github.com/andrewdjackson/memsulator/utils"
 	log "github.com/sirupsen/logrus"
-	"go.bug.st/serial.v1"
+	"go.bug.st/serial"
 	"time"
 )
 

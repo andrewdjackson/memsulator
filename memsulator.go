@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -123,6 +122,7 @@ func (memsulator *Memsulator) startECU() {
 	}
 }
 
+/*
 func main() {
 	scenefile := flag.String("scenario", "scenarios/default.csv", "scenario file to run")
 	port := flag.String("port", "", "serial communication port")
@@ -146,3 +146,4 @@ func main() {
 	memsulator.scenario = scenario
 	memsulator.startECU()
 }
+*/

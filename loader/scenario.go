@@ -33,6 +33,13 @@ func NewScenario() *Scenario {
 }
 
 func (scenario *Scenario) Load(filepath string) {
+	if _, err := os.Stat(filepath); err != nil {
+		log.Errorf("unable to find file %s (%e)", filepath, err)
+		return
+	}
+
+	scenario.openFile(filepath)
+
 	if err := gocsv.Unmarshal(scenario.file, &scenario.csvFields); err != nil {
 		log.Errorf("unable to parse file %s", err)
 	} else {
