@@ -196,9 +196,9 @@ func (responder *Responder) buildResponseMap() {
 	responder.responseMap["09"] = []byte{0x09, 0x00} // O2 heater off
 	responder.responseMap["1B"] = []byte{0x1b, 0x00} // boost valve on
 	responder.responseMap["0B"] = []byte{0x0b, 0x00} // boost valve off
-	responder.responseMap["1D"] = []byte{0x1d}       // fan 1 on
+	responder.responseMap["1D"] = []byte{0x1d, 0x00} // fan 1 on
 	responder.responseMap["0D"] = []byte{0x0d, 0x00} // fan 1 off
-	responder.responseMap["1E"] = []byte{0x1e}       // fan 2 on
+	responder.responseMap["1E"] = []byte{0x1e, 0x00} // fan 2 on
 	responder.responseMap["0E"] = []byte{0x0e, 0x00} // fan 2 off
 	responder.responseMap["EF"] = []byte{0xef, 0x03} // test mpi injectors
 	responder.responseMap["F7"] = []byte{0xf7, 0x03} // test injectors

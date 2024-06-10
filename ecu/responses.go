@@ -68,9 +68,9 @@ func init() {
 	responseMap["09"] = []byte{0x09, 0x00} // O2 heater off
 	responseMap["1B"] = []byte{0x1b, 0x00} // boost valve on
 	responseMap["0B"] = []byte{0x0b, 0x00} // boost valve off
-	responseMap["1D"] = []byte{0x1d}       // fan 1 on
+	responseMap["1D"] = []byte{0x1d, 0x00} // fan 1 on
 	responseMap["0D"] = []byte{0x0d, 0x00} // fan 1 off
-	responseMap["1E"] = []byte{0x1e}       // fan 2 on
+	responseMap["1E"] = []byte{0x1e, 0x00} // fan 2 on
 	responseMap["0E"] = []byte{0x0e, 0x00} // fan 2 off
 	responseMap["EF"] = []byte{0xef, 0x03} // test mpi injectors
 	responseMap["F7"] = []byte{0xf7, 0x03} // test injectors
