@@ -76,6 +76,8 @@ func (emulator *Emulator) initialise() bool {
 	command = emulator.readSerialByte()
 	emulator.writeSerial([]byte{0xD0, 0x99, 0x00, 0x02, 0x03})
 
+	command = emulator.readSerialByte()
+
 	log.Infof("initialisation complete")
 
 	return true
