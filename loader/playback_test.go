@@ -2,60 +2,43 @@ package loader
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestPlayback(t *testing.T) {
 	scenario := NewScenario()
-	if err := scenario.Load("../scenarios/thyberg.csv"); err != nil {
+	if err := scenario.Load(TEST_FILE); err != nil {
 		t.Errorf("%s", err)
 	} else {
-		if len(scenario.dataframes) == 0 {
-			t.Errorf("no dataframes in scenario")
+		assert.Len(t, scenario.dataframes, DATAFRAME_COUNT)
+
+		playback := NewPlayback(scenario)
+		assert.Equal(t, playback.position, 0)
+
+		var response []byte
+
+		for i := 0; i < DATAFRAME_COUNT; i += 1 {
+			response = playback.NextDataframe([]byte{0x80})
+			fmt.Printf("%X\n", response)
+
+			assert.Equal(t, playback.position, i)
+			assert.Equal(t, uint8(response[0]), uint8(0x80))
+			assert.Equal(t, uint8(response[len(response)-1]), uint8(i))
+
+			response = playback.NextDataframe([]byte{0x7D})
+			fmt.Printf("%X\n", response)
+
+			assert.Equal(t, playback.position, i)
+			assert.Equal(t, uint8(response[0]), uint8(0x7d))
 		}
-	}
 
-	playback := NewPlayback(scenario)
-	if playback.position != 0 {
-		t.Errorf("not initialised")
-	}
+		// test loop back to start
+		response = playback.NextDataframe([]byte{0x80})
+		fmt.Printf("%X\n", response)
 
-	var response []byte
-
-	response = playback.NextDataframe([]byte{0x80})
-	fmt.Printf("%X\n", response)
-	if playback.position != 0 {
-		t.Errorf("not incremented")
-	}
-	if response[0] != 0x80 {
-		t.Errorf("not dataframe")
-	}
-
-	response = playback.NextDataframe([]byte{0x7D})
-	fmt.Printf("%X\n", response)
-	if playback.position != 0 {
-		t.Errorf("not incremented")
-	}
-	if response[0] != 0x7D {
-		t.Errorf("not dataframe")
-	}
-
-	response = playback.NextDataframe([]byte{0x80})
-	fmt.Printf("%X\n", response)
-	if playback.position != 1 {
-		t.Errorf("not incremented")
-	}
-	if response[0] != 0x80 {
-		t.Errorf("not dataframe")
-	}
-
-	// comment
-	response = playback.NextDataframe([]byte{0x7D})
-	fmt.Printf("%X\n", response)
-	if playback.position != 1 {
-		t.Errorf("not incremented")
-	}
-	if response[0] != 0x7D {
-		t.Errorf("not dataframe")
+		assert.Equal(t, playback.position, 0)
+		assert.Equal(t, uint8(response[0]), uint8(0x80))
+		assert.Equal(t, uint8(response[len(response)-1]), uint8(0))
 	}
 }

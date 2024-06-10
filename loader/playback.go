@@ -42,7 +42,7 @@ func (playback *Playback) NextDataframe(command []byte) []byte {
 		playback.dataframe7dSent = false
 	}
 
-	if playback.position > playback.scenario.Count {
+	if playback.position >= playback.scenario.Count {
 		log.Infof("reached end of scenario, restarting from beginning")
 		playback.Start()
 	}
