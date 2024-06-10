@@ -38,14 +38,10 @@ func (emulator *Emulator) ReceiveAndSend() ([]byte, error) {
 	var err error
 
 	command := emulator.waitForCommand()
-	log.Infof("%X", command)
-
-	if command[0] == 0xCA {
-		// initialisation required
-		emulator.initialise()
-	}
+	log.Infof("command  %X", command)
 
 	response := emulator.sendResponse(command)
+	log.Infof("response %X", response)
 
 	return response, err
 }

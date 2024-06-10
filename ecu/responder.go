@@ -182,6 +182,8 @@ func (responder *Responder) buildResponseMap() {
 	responder.responseMap["FB"] = []byte{0xfb, 0x80} // Idle Air Control position
 
 	// actuators
+	responder.responseMap["10"] = []byte{0x10, 0x00} // temperature gauge on
+	responder.responseMap["00"] = []byte{0x00, 0x00} // temperature gauge off
 	responder.responseMap["11"] = []byte{0x11, 0x00} // fuel pump on
 	responder.responseMap["01"] = []byte{0x01, 0x00} // fuel pump off
 	responder.responseMap["12"] = []byte{0x12, 0x00} // ptc relay on
@@ -223,7 +225,7 @@ func (responder *Responder) buildResponseMap() {
 	responder.responseMap["FC"] = []byte{0xfc, 0x00}
 
 	// kline responses
-	responder.responseMap["00"] = []byte{0x00, 0x00, 0x00, 0x55, 0x76, 0x83}
-	responder.responseMap["55"] = []byte{0x55, 0x76, 0x83}
-	responder.responseMap["7C"] = []byte{0x7C, 0xE9}
+	//responder.responseMap["00"] = []byte{0x00, 0x00, 0x00, 0x55, 0x76, 0x83}
+	//responder.responseMap["55"] = []byte{0x55, 0x76, 0x83}
+	//responder.responseMap["7C"] = []byte{0x7C, 0xE9}
 }
