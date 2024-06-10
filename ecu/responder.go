@@ -191,7 +191,7 @@ func (responder *Responder) buildResponseMap() {
 	responder.responseMap["13"] = []byte{0x13, 0x00} // ac relay on
 	responder.responseMap["03"] = []byte{0x03, 0x00} // ac relay off
 	responder.responseMap["18"] = []byte{0x18, 0x00} // purge valve on
-	responder.responseMap["08"] = []byte{0x08, 0x00} // purge vavle off
+	responder.responseMap["08"] = []byte{0x08, 0x00} // purge valve off
 	responder.responseMap["19"] = []byte{0x19, 0x00} // O2 heater on
 	responder.responseMap["09"] = []byte{0x09, 0x00} // O2 heater off
 	responder.responseMap["1B"] = []byte{0x1b, 0x00} // boost valve on
