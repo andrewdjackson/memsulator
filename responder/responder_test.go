@@ -23,5 +23,10 @@ func TestSendResponse(t *testing.T) {
 		response = emulator.sendResponse([]byte{0x7d})
 		assert.Equal(t, uint8(response[0]), uint8(0x7d))
 		assert.Equal(t, uint8(response[len(response)-1]), uint8(0))
+
+		// initialisation byte
+		response = emulator.sendResponse([]byte{0xCA})
+		assert.Equal(t, uint8(response[0]), uint8(0xCA))
+		assert.Len(t, response, 1)
 	}
 }

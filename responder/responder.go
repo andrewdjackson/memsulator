@@ -86,6 +86,11 @@ func (emulator *Emulator) initialise() bool {
 func (emulator *Emulator) sendResponse(command []byte) []byte {
 	var response []byte
 
+	if command[0] == 0xCA {
+		// initialisation required
+		emulator.initialise()
+	}
+
 	if command[0] == 0x80 || command[0] == 0x7D {
 		response = emulator.playback.NextDataframe(command)
 	} else {
