@@ -49,6 +49,7 @@ func TestPlayback(t *testing.T) {
 		t.Errorf("not dataframe")
 	}
 
+	// comment
 	response = playback.NextDataframe([]byte{0x7D})
 	fmt.Printf("%X\n", response)
 	if playback.position != 1 {

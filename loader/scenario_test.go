@@ -4,6 +4,7 @@ import (
 	"testing"
 )
 
+// comment
 func TestLoadScenario(t *testing.T) {
 	scenario := NewScenario()
 	if err := scenario.Load("../scenarios/thyberg.csv"); err != nil {
