@@ -86,7 +86,9 @@ func (mems *MemsConnection) LoadScenario(scenario *scenarios.Scenario) {
 	utils.LogI.Printf("loaded scenario")
 }
 
-// Listen listens for commands from the FCR
+// Listen for commands sent to the ECU
+// and send back the ECU response
+// this is an infinte loop, so needs to be executed as a go process
 func (mems *MemsConnection) Listen() {
 	var cr CommandResponse
 

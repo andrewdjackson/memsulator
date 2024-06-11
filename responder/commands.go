@@ -1,252 +1,94 @@
 package responder
 
-// MEMS Command List
-/*
-STOP Actuator Test
+var responseMap = make(map[string][]byte)
 
-0x00	Coolant gauge	0x00, 0x00
-0x01	Fuel pump relay	0x01, 0x00
-0x02	PTC (inlet manifold heater) relay	0x02, 0x00
-0x03	Air Conditioning relay	0x03, 0x00
-0x04	Idle solenoid
-0x05	ORFCO solenoid
-0x06	Pulse air valve
-0x07	EGR valve
-0x08	Purge valve	0x08, 0x00
-0x09	O2 heater relay	0x09, 0x00
-0x0A	Emissions fail lamp
-0x0B	Wastegate
-0x0C	Fuel used
-0x0D	Fan 1
-0x0E	Fan 2
-0x0F	Variable valve timing
+// package init function
+func init() {
+	// Response formats for commands that do not respond with the format [COMMAND][VALUE]
+	// Generally these are either part of the initialisation sequence or are ECU data frames
+	responseMap["0A"] = []byte{0x0A}
+	responseMap["CA"] = []byte{0xCA}
+	responseMap["75"] = []byte{0x75}
 
-START Actuator Test
+	// Format for DataFrames starts with [Command Echo][Data Size][Data Bytes (28 for 0x80 and 32 for 0x7D)]
+	responseMap["80"] = []byte{0x80, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B}
+	responseMap["7D"] = []byte{0x7d, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F}
+	responseMap["D0"] = []byte{0xD0, 0x99, 0x00, 0x02, 0x03}
+	responseMap["D1"] = []byte{0xD1, 0x41, 0x42, 0x4E, 0x4D, 0x50, 0x30, 0x30, 0x32, 0x99, 0x00, 0x02, 0x03, 0x41, 0x42}
 
-0x10	Coolant gauge	0x10, 0x00
-0x11	Fuel pump relay	0x11, 0x00
-0x12	PTC (inlet manifold heater) relay	0x12, 0x00
-0x13	Air Conditioning relay	0x13, 0x00
-0x14	Idle solenoid
-0x15	ORFCO solenoid
-0x16	Pulse air valve
-0x17	EGR valve
-0x18	Purge valve	0x18, 0x00
-0x19	O2 heater relay	0x19, 0x00
-0x1A	Emissions fail lamp
-0x1B	Wastegate
-0x1C	Fuel used
-0x1D	Fan 1 relay	0x1D
-0x1E	Fan 2 relay	0x1E
-0x1F	Variable valve timing
+	// heartbeat
+	responseMap["F4"] = []byte{0xf4, 0x00}
 
-Commands
+	// adjustments
+	responseMap["79"] = []byte{0x79, 0x8b} // increment STFT (default is 138)
+	responseMap["7A"] = []byte{0x7a, 0x89} // decrement STFT (default is 138)
+	responseMap["7B"] = []byte{0x7b, 0x1f} // increment LTFT (default is 30)
+	responseMap["7C"] = []byte{0x7c, 0x1d} // decrement LTFT (default is 30)
+	responseMap["89"] = []byte{0x89, 0x24} // increment Idle Decay (default is 35)
+	responseMap["8A"] = []byte{0x8a, 0x22} // decrement Idle Decay (default is 35)
+	responseMap["91"] = []byte{0x91, 0x81} // increment Idle Speed  (default is 128)
+	responseMap["92"] = []byte{0x92, 0x7f} // decrement Idle Speed (default is 128)
+	responseMap["93"] = []byte{0x93, 0x81} // increment Ignition Advance Offset (default is 128)
+	responseMap["94"] = []byte{0x94, 0x7f} // decrement Ignition Advance Offset (default is 128)
+	responseMap["FD"] = []byte{0xfd, 0x81} // increment IAC (default is 128)
+	responseMap["FE"] = []byte{0xfe, 0x7f} // decrement IAC (default is 128)
 
-0x20	Engine bay temperature warning light off	20 00
-0x21	Cruise control disable relay	21 00
-0x30	Engine bay temperature warning light on	30 00
-0x31	Cruise control disable relay off	31 00
-0x60	Test RPM gauge stop / Exhaust backpressur valve test	60 00
-0x61	Variable intake test	61 00
-0x63	Test RPM gauge	63 00
-0x64	Test Boost gauge	64 00
-0x65	S/W Throt S.W	65 00
-0x67	Fan 3 (engine bay) off	67 00
-0x6B	Test RPM gauge start	6B 00
-0x6D	?	6D 00
-0x6F	Fan 3 (engine bay) on	6F 00
-0x79	Increments fuel trim setting and returns the new value	0x79, [new value]
-0x7A	Decrements fuel trim setting and returns the new value	0x7A, [new value]
-0x7B	Increments fuel trim setting and returns the new value	0x7B, [new value]
-0x7C	Decrements fuel trim setting and returns the new value	0x7C, [new value]
-0x7D	Request data packet 0x7D	0x7D, [data packet]
-0x7E	? Used as part of (auto?) idle adjustment	7E 08
-0x7F	? Used as part of (auto?) ignition adjustment	7F 05
-0x80	Request data frame 80, followed by 28-byte data frame
-0x81	? Used at end of idle/ignition/clearing (auto?) adjustments	0x81, 0x00
-0x82	?	82 09 9E 1D 00 00 60 05 FF FF
-0x89	Increments idle decay setting and returns the new value	0x89, [new value]
-0x8A	Decrements idle decay setting and returns the new value	0x8A, [new value]
-0x91	Increments idle speed setting and returns the new value	0x91, [new value]
-0x92	Decrements idle speed setting and returns the new value	0x92, [new value]
-0x93	Increments ignition advance offset and returns the new value	0x93, [new value]
-0x94	Decrements ignition advance offset and returns the new value	0x94, [new value]
-0x9E	Alternate first byte of init (different diag mode/security level?)	9E
-0xC4	Swap to diagnostic mode 4 (only from mode 3)	C4 xx
-0xCA	First byte of "normal" init	CA
-0xCB	?	CB 00
-0xCC	Clear fault codes	CC 00
-0xCD	Debug? Read RAM?	CD 01
-0xCE	Alternate first byte of init (different diag mode/security level?)	CE
-0xCF	Alternate first byte of init (different diag mode/security level?)	CF
-0xD0	ECU/Software ID	D0 99 00 03 03
-0xD1	ECU/Software IDs 1x integer, 1x Ascii	D1 41 42 4E 4D 50 30 30 33 99 00 03 03
-        e.g. integer: 99 00 03 03
-        e.g. string/Ascii: 41 42 4E 4D 50 30 30 33 = ABNMP003
-0xD2	Read security status	D2, followed by 02 01, 00 01, or 01 01
-0xD3	Recode ECU	D3, followed by 02 01, 00 02, or 01 01 (reply needs checking)
-0xDA	Test injector 1 (mems 1.9)	DA, 01?
-0xDB	Test injector 2 (mems 1.9)	DB, 01?
-0xDE	Alternate first byte of init (different diag mode/security level?)	DE
-0xE0	Alternate first byte of init (different diag mode/security level?)	E0
-0xE5	Alternate first byte of init (different diag mode/security level?)	E5
-0xE7	?	E7 02
-0xE8	?	E8 05 26 01 00 01
-0xE9	Clear faults 2nd? needs ignition cycle?
-0xEA
-0xEB
-0xEC
-0xED	?	ED 00
-0xEE	?	EE 00
-0xEF	Actuate fuel injectors? (MPi?)	EF 03
-0xF0	Check current diagnostic mode	F0 14 - mode 3 (default), 1E - mode 4, 50 - mode 5 or 6 (you should know which)
-0xF1
-0xF2	Swap to diagnostic mode 6 (only from mode 4)	F2 xx
-0xF3	Swap to diagnostic mode 4 (from mode 5,6)	F3 xx
-0xF4	Swap to diagnostic mode 5 (from mode 3)	F4 xx
-0xF5	Swap to diagnostic mode 3 (from mode 4,5,6)	F5 xx
-0xF6	Disconnect/Reset diagnostic session
-0xF7	Actuate fuel injector (SPi?)	F7 03
-0xF8	Fire ignition coil	F8 02
-0xF9	Adjust main map? 2 bytes input also?	0x00 on success
-0xFA	Clear all adaptations	0xFA, 0x00
-0xFB	Request current IAC position	0xFB [IAC position XX]
-0xFC	?	FC 00
-0xFD	Open IAC by one step and report current position	FD, [IAC position]
-0xFE	Close IAC by one step and report current position	FE, [IAC position]
-0xFF	Request current IAC position?
-*/
+	//resets
+	responseMap["0F"] = []byte{0x0f, 0x00} // clear all adjustments
+	responseMap["CC"] = []byte{0xcc, 0x00} // clear faults
+	responseMap["FA"] = []byte{0xfa, 0x00} // clear all computed and learnt settings
+	responseMap["FB"] = []byte{0xfb, 0x80} // Idle Air Control Position
 
-// MEMSHeartbeat command code for a communication heartbeat
-var MEMSHeartbeat = []byte{0xf4}
+	// actuators
+	responseMap["10"] = []byte{0x10, 0x00} // temperature gauge on
+	responseMap["00"] = []byte{0x00, 0x00} // temperature gauge off
+	responseMap["11"] = []byte{0x11, 0x00} // fuel pump on
+	responseMap["01"] = []byte{0x01, 0x00} // fuel pump off
+	responseMap["12"] = []byte{0x12, 0x00} // ptc relay on
+	responseMap["02"] = []byte{0x02, 0x00} // ptc relay off
+	responseMap["13"] = []byte{0x13, 0x00} // ac relay on
+	responseMap["03"] = []byte{0x03, 0x00} // ac relay off
+	responseMap["18"] = []byte{0x18, 0x00} // purge valve on
+	responseMap["08"] = []byte{0x08, 0x00} // purge vavle off
+	responseMap["19"] = []byte{0x19, 0x00} // O2 heater on
+	responseMap["09"] = []byte{0x09, 0x00} // O2 heater off
+	responseMap["1B"] = []byte{0x1b, 0x00} // boost valve on
+	responseMap["0B"] = []byte{0x0b, 0x00} // boost valve off
+	responseMap["1D"] = []byte{0x1d, 0x00} // fan 1 on
+	responseMap["0D"] = []byte{0x0d, 0x00} // fan 1 off
+	responseMap["1E"] = []byte{0x1e, 0x00} // fan 2 on
+	responseMap["0E"] = []byte{0x0e, 0x00} // fan 2 off
+	responseMap["EF"] = []byte{0xef, 0x03} // test mpi injectors
+	responseMap["F7"] = []byte{0xf7, 0x03} // test injectors
+	responseMap["F8"] = []byte{0xf8, 0x02} // fire coil
 
-// MEMSDataFrame request complete dataframes using 0x7d and 0x80 coomands
-var MEMSDataFrame = []byte{0x80, 0x7d}
+	// unknown command Responses
+	responseMap["65"] = []byte{0x65, 0x00}
+	responseMap["6D"] = []byte{0x6d, 0x00}
+	responseMap["7E"] = []byte{0x7e, 0x08}
+	responseMap["7F"] = []byte{0x7f, 0x05}
+	responseMap["82"] = []byte{0x82, 0x09, 0x9E, 0x1D, 0x00, 0x00, 0x60, 0x05, 0xFF, 0xFF}
+	responseMap["CB"] = []byte{0xcb, 0x00}
+	responseMap["CD"] = []byte{0xcd, 0x01}
+	responseMap["D2"] = []byte{0xd2, 0x02, 0x01, 0x00, 0x01}
+	responseMap["D3"] = []byte{0xd3, 0x02, 0x01, 0x00, 0x02}
+	responseMap["E7"] = []byte{0xe7, 0x02}
+	responseMap["E8"] = []byte{0xe8, 0x05, 0x26, 0x01, 0x00, 0x01}
+	responseMap["ED"] = []byte{0xed, 0x00}
+	responseMap["EE"] = []byte{0xee, 0x00}
+	responseMap["F0"] = []byte{0xf0, 0x05}
+	responseMap["F3"] = []byte{0xf3, 0x00}
+	responseMap["F5"] = []byte{0xf5, 0x00}
+	responseMap["F6"] = []byte{0xf6, 0x00}
+	responseMap["FC"] = []byte{0xfc, 0x00}
+}
 
-// MEMSReqData80 command code for requesting data frame 0x80
-var MEMSReqData80 = []byte{0x80}
-
-// MEMSReqData7D command code for requesting data frame 0x7D
-var MEMSReqData7D = []byte{0x7d}
-
-// MEMSInitCommandA command code to start initialisation sequence
-var MEMSInitCommandA = []byte{0xca}
-
-// MEMSInitCommandB command code forms second command as part of the initialisation sequence
-var MEMSInitCommandB = []byte{0x75}
-
-// MEMSInitECUID command code for retrieving the ECU ID as the final step in initialisation
-var MEMSInitECUID = []byte{0xd0}
-
-// MEMSGetECUID command code to retrieve the full ECU ID
-// example: D1 41 42 4E 4D 50 30 30 33 99 00 03 03
-// 41 42 4E 4D 50 30 30 33 = ABNMP003
-// ID = 99 00 03 03
-var MEMSGetECUSerial = []byte{0xd1}
-
-// MEMSClearFaults command code to clear fault codes
-var MEMSClearFaults = []byte{0xCC}
-
-// MEMSResetAdj command code that instructs the ECU to clear all adjustments
-var MEMSResetAdj = []byte{0x0F}
-
-// MEMSResetECU command code that instructs the ECU to clear all computed and learnt settings
-var MEMSResetECU = []byte{0xFA}
-
-// MEMS Adjustment Settings
-//
-// | Setting                 | Decrement | Increment |
-// | ----------------------- | --------- | --------- |
-// | Fuel trim (Short Term?) |     7A    |     79    |
-// | Fuel trim (Long Term?)  |     7C    |     7B    |
-// | Idle decay              |     8A    |     89    |
-// | Idle speed              |     92    |     91    |
-// | Ignition advance offset |     94    |     93    |
-// | IAC Position            |     FD    |     FE    |
-
-//
-// Fuel Trim Adjustments
-//
-
-// MEMSSTFTDecrement command
-var MEMSSTFTDecrement = []byte{0x7a}
-
-// MEMSSTFTIncrement command
-var MEMSSTFTIncrement = []byte{0x79}
-
-// MEMSLTFTDecrement command
-var MEMSLTFTDecrement = []byte{0x7c}
-
-// MEMSLTFTIncrement command
-var MEMSLTFTIncrement = []byte{0x7b}
-var MEMSFuelTrimMin = 0x00
-var MEMSFuelTrimMax = 0xfe
-var MEMSFuelTrimDefault = 0x8a
-
-// MEMSGetIACPosition command code to retrieve the Idle Air Control Position
-var MEMSGetIACPosition = []byte{0xfb}
-var MEMSIACPositionDefault = 0x80
-var MEMSIACIncrement = []byte{0xfd}
-var MEMSIACDecrement = []byte{0xfe}
-
-//
-// Idle Decay Adjustments
-//
-
-// MEMSIdleDecayDecrement commad
-var MEMSIdleDecayDecrement = []byte{0x8a}
-
-// MEMSIdleDecayIncrement command
-var MEMSIdleDecayIncrement = []byte{0x89}
-var MEMSIdleDecayMin = 0x0a
-var MEMSIdleDecayMax = 0x3c
-var MEMSIdleDecayDefault = 0x23
-
-//
-// Idle Speed Adjustments
-//
-
-// MEMSIdleSpeedDecrement command
-var MEMSIdleSpeedDecrement = []byte{0x92}
-
-// MEMSIdleSpeedIncrement command
-var MEMSIdleSpeedIncrement = []byte{0x91}
-var MEMSIdleSpeedMin = 0x78
-var MEMSIdleSpeedMax = 0x88
-var MEMSIdleSpeedDefault = 0x80
-
-//
-// Ignition Advance Adjustments
-//
-
-// MEMSIgnitionAdvanceOffsetDecrement command
-var MEMSIgnitionAdvanceOffsetDecrement = []byte{0x94}
-
-// MEMSIgnitionAdvanceOffsetIncrement command
-var MEMSIgnitionAdvanceOffsetIncrement = []byte{0x93}
-var MEMSIgnitionAdvanceOffsetMin = 0x74
-var MEMSIgnitionAdvanceOffsetMax = 0x8c
-var MEMSIgnitionAdvanceOffsetDefault = 0x80
-
-//
-// Actuators
-//
-
-var MEMSFuelPumpOn = []byte{0x11}
-var MEMSFuelPumpOff = []byte{0x01}
-var MEMSPTCRelayOn = []byte{0x12}
-var MEMSPTCRelayOff = []byte{0x02}
-var MEMSACRelayOn = []byte{0x13}
-var MEMSACRelayOff = []byte{0x03}
-var MEMSPurgeValveOn = []byte{0x18}
-var MEMSPurgeValveOff = []byte{0x08}
-var MEMSO2HeaterOn = []byte{0x19}
-var MEMSO2HeaterOff = []byte{0x09}
-var MEMSBoostValveOn = []byte{0x1B}
-var MEMSBoostValveOff = []byte{0x0B}
-var MEMSFan1On = []byte{0x1D}
-var MEMSFan1Off = []byte{0x0D}
-var MEMSFan2On = []byte{0x1E}
-var MEMSFan2Off = []byte{0x0E}
-var MEMSTestInjectors = []byte{0xF7}
-var MEMSFireCoil = []byte{0xF8}
+func getResponse(command []byte) []byte {
+	c := string(command[:])
+	if r := responseMap[c]; r == nil {
+		// no mapped response, echo the command
+		return []byte{command[0], 0x00}
+	} else {
+		return r
+	}
+}

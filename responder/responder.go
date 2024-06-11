@@ -16,10 +16,12 @@ type Emulator struct {
 }
 
 func NewEmulator(playback *loader.Playback) *Emulator {
-	return &Emulator{
+	emulator := &Emulator{
 		playback:  playback,
 		connected: false,
 	}
+
+	return emulator
 }
 
 func (emulator *Emulator) Connect(port string) (bool, error) {
@@ -34,16 +36,20 @@ func (emulator *Emulator) Connect(port string) (bool, error) {
 	return emulator.connected, err
 }
 
-func (emulator *Emulator) ReceiveAndSend() ([]byte, error) {
-	var err error
+// Listen for commands sent to the ECU
+// and send back the ECU response
+// this is an infinte loop, so needs to be executed as a go process
+func (emulator *Emulator) Listen() {
+	for {
+		command := emulator.readSerial()
 
-	command := emulator.waitForCommand()
-	log.Infof("command  %X", command)
+		if len(command) > 0 {
+			log.Infof("command  %X", command)
 
-	response := emulator.sendResponse(command)
-	log.Infof("response %X", response)
-
-	return response, err
+			response := emulator.sendResponse(command)
+			log.Infof("response %X", response)
+		}
+	}
 }
 
 func (emulator *Emulator) Disconnect() (bool, error) {
@@ -56,56 +62,17 @@ func (emulator *Emulator) Disconnect() (bool, error) {
 	return emulator.connected, err
 }
 
-func (emulator *Emulator) initialise() bool {
-	var command []byte
-
-	// CA <- CA
-	command = []byte{0xCA}
-	emulator.writeSerial(command)
-	// 75 <- 75
-	command = emulator.readSerialByte()
-	emulator.writeSerial(command)
-	// F4 <- F4
-	command = emulator.readSerialByte()
-	emulator.writeSerial(command)
-	// D0 <- D099000203
-	command = emulator.readSerialByte()
-	emulator.writeSerial([]byte{0xD0, 0x99, 0x00, 0x02, 0x03})
-
-	command = emulator.readSerialByte()
-
-	log.Infof("initialisation complete")
-
-	return true
-}
-
 func (emulator *Emulator) sendResponse(command []byte) []byte {
 	var response []byte
-
-	if command[0] == 0xCA {
-		// initialisation required
-		emulator.initialise()
-	}
 
 	if command[0] == 0x80 || command[0] == 0x7D {
 		response = emulator.playback.NextDataframe(command)
 	} else {
 		// get appropriate response
-		response = []byte{command[0], 0x00}
+		response = getResponse(command)
 	}
 
 	return response
-}
-
-func (emulator *Emulator) waitForCommand() []byte {
-	var command []byte
-
-	for {
-		command = emulator.readSerialByte()
-		break
-	}
-
-	return command
 }
 
 func (emulator *Emulator) connectToSerialPort(port string) error {
@@ -128,7 +95,7 @@ func (emulator *Emulator) connectToSerialPort(port string) error {
 	return err
 }
 
-func (emulator *Emulator) readSerialByte() []byte {
+func (emulator *Emulator) readSerial() []byte {
 	var n int
 	var e error
 
@@ -152,34 +119,6 @@ func (emulator *Emulator) readSerialByte() []byte {
 
 	if n > 0 {
 		log.Infof("serial read %x (%d)", data, n)
-	}
-
-	return data
-}
-
-func (emulator *Emulator) readSerial() []byte {
-	var n int
-	var err error
-
-	// serial read buffer
-	b := make([]byte, 1)
-
-	//  data frame buffer
-	data := make([]byte, 0)
-
-	if emulator.serialPort != nil {
-		n, err = emulator.serialPort.Read(b)
-
-		if err != nil {
-			log.Infof("error %s", err)
-		} else {
-			// append the read bytes to the data frame
-			data = append(data, b[:n]...)
-		}
-	}
-
-	if n > 0 {
-		log.Infof("%x (%d)", data, n)
 	}
 
 	return data
