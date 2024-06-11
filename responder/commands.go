@@ -1,5 +1,7 @@
 package responder
 
+import log "github.com/sirupsen/logrus"
+
 var responseMap = make(map[string][]byte)
 
 // package init function
@@ -87,6 +89,7 @@ func getResponse(command []byte) []byte {
 	c := string(command[:])
 	if r := responseMap[c]; r == nil {
 		// no mapped response, echo the command
+		log.Warnf("unable to find command %s", c)
 		return []byte{command[0], 0x00}
 	} else {
 		return r
