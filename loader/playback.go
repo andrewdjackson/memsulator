@@ -57,5 +57,7 @@ func (playback *Playback) NextDataframe(command []byte) []byte {
 		dataframe = playback.scenario.dataframes[playback.position].Dataframe7d
 	}
 
+	log.Infof("playback %X (%d)", dataframe, playback.position)
+
 	return dataframe
 }

@@ -136,7 +136,7 @@ func (emulator *Emulator) writeSerial(data []byte) {
 		}
 
 		if n > 0 {
-			log.Infof("%x (%d)", data, n)
+			log.Infof("sending %X (%d)", data, n)
 		}
 	}
 }
