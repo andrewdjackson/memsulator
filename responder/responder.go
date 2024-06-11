@@ -70,6 +70,7 @@ func (emulator *Emulator) sendResponse(command []byte) []byte {
 	} else {
 		// get appropriate response
 		response = getResponse(command)
+		log.Infof("found response %X", response)
 	}
 
 	return response
