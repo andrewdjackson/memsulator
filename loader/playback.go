@@ -42,22 +42,36 @@ func (playback *Playback) NextDataframe(command []byte) []byte {
 		playback.dataframe7dSent = false
 	}
 
-	if playback.position >= playback.scenario.Count {
-		log.Infof("reached end of scenario, restarting from beginning")
-		playback.Start()
-	}
+	if playback.isValidDataframe(playback.position) {
+		if playback.position >= playback.scenario.Count {
+			log.Infof("reached end of scenario, restarting from beginning")
+			playback.Start()
+		}
 
-	if command[0] == 0x80 {
+		if command[0] == 0x80 {
+			playback.dataframe80Sent = true
+			dataframe = playback.scenario.dataframes[playback.position].Dataframe80
+		}
+
+		if command[0] == 0x7d {
+			playback.dataframe7dSent = true
+			dataframe = playback.scenario.dataframes[playback.position].Dataframe7d
+		}
+
+		log.Infof("playback %X (%d)", dataframe, playback.position)
+	} else {
+		// skip dataframe
+		log.Warnf("playback dataframe invalid at %d", playback.position)
+
 		playback.dataframe80Sent = true
-		dataframe = playback.scenario.dataframes[playback.position].Dataframe80
-	}
-
-	if command[0] == 0x7d {
 		playback.dataframe7dSent = true
-		dataframe = playback.scenario.dataframes[playback.position].Dataframe7d
-	}
 
-	log.Infof("playback %X (%d)", dataframe, playback.position)
+		dataframe = playback.NextDataframe(command)
+	}
 
 	return dataframe
+}
+
+func (playback *Playback) isValidDataframe(position int) bool {
+	return len(playback.scenario.dataframes[playback.position].Dataframe80) == 29 && len(playback.scenario.dataframes[playback.position].Dataframe7d) == 33
 }
