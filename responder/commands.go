@@ -1,6 +1,9 @@
 package responder
 
-import log "github.com/sirupsen/logrus"
+import (
+	"encoding/hex"
+	log "github.com/sirupsen/logrus"
+)
 
 var responseMap = make(map[string][]byte)
 
@@ -86,7 +89,7 @@ func init() {
 }
 
 func getResponse(command []byte) []byte {
-	c := string(command[:])
+	c := hex.EncodeToString(command)
 	if r := responseMap[c]; r == nil {
 		// no mapped response, echo the command
 		log.Warnf("unable to find command %s", c)
