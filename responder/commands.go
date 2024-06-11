@@ -1,7 +1,7 @@
 package responder
 
 import (
-	"encoding/hex"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -89,7 +89,7 @@ func init() {
 }
 
 func getResponse(command []byte) []byte {
-	c := hex.EncodeToString(command)
+	c := fmt.Sprintf("%X", command)
 	if r := responseMap[c]; r == nil {
 		// no mapped response, echo the command
 		log.Warnf("unable to find command %s", c)
