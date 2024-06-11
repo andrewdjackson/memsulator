@@ -22,6 +22,8 @@ func main() {
 	if connected, err := emulator.Connect(*port); err == nil {
 		if connected {
 			go emulator.Listen()
+
+			select {}
 		} else {
 			log.Fatalf("unable to connect (%s)", err)
 		}
