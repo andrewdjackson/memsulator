@@ -47,8 +47,6 @@ func (emulator *Emulator) Listen() {
 			log.Infof("command  %X", command)
 
 			response := emulator.sendResponse(command)
-			log.Infof("response %X", response)
-
 			emulator.writeSerial(response)
 		}
 	}
