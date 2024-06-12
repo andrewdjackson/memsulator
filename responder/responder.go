@@ -2,7 +2,6 @@ package responder
 
 import (
 	"github.com/andrewdjackson/memsulator/loader"
-	"github.com/andrewdjackson/memsulator/utils"
 	log "github.com/sirupsen/logrus"
 	"go.bug.st/serial"
 	"time"
@@ -111,7 +110,7 @@ func (emulator *Emulator) readSerial() []byte {
 		n, e = emulator.serialPort.Read(b)
 
 		if e != nil {
-			log.Infof("%s error %s", utils.ECUCommandTrace, e)
+			log.Infof("serial error %s", e)
 		} else {
 			// append the read bytes to the data frame
 			data = append(data, b[:n]...)
