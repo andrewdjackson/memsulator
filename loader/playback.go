@@ -58,7 +58,7 @@ func (playback *Playback) NextDataframe(command []byte) []byte {
 			dataframe = playback.scenario.dataframes[playback.position].Dataframe7d
 		}
 
-		log.Infof("playback %X (%d)", dataframe, playback.position)
+		log.Infof("playback %X (%d/%d)", dataframe, playback.position, playback.scenario.Count)
 	} else {
 		// skip dataframe
 		log.Warnf("playback dataframe invalid at %d", playback.position)
