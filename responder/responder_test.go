@@ -36,13 +36,14 @@ func TestEmulator_Connect(t *testing.T) {
 	var connected bool
 
 	vport := NewVirtualSerialPort()
-	assert.Equal(t, vport.Connected, true)
+	err = vport.CreateVirtualPorts()
+	assert.Equal(t, err, nil)
 
 	scenario := loader.NewScenario()
 	playback := loader.NewPlayback(scenario)
 	emulator := NewEmulator(playback)
 
-	connected, err = emulator.Connect(vport.FCRPort)
+	connected, err = emulator.Connect(vport.fcrPort)
 	assert.Equal(t, err, nil)
 	assert.True(t, connected)
 
@@ -56,13 +57,14 @@ func TestEmulator_ReceiveAndSend(t *testing.T) {
 	var connected bool
 
 	vport := NewVirtualSerialPort()
-	assert.Equal(t, vport.Connected, true)
+	err = vport.CreateVirtualPorts()
+	assert.Equal(t, err, nil)
 
 	scenario := loader.NewScenario()
 	playback := loader.NewPlayback(scenario)
 	emulator := NewEmulator(playback)
 
-	connected, err = emulator.Connect(vport.FCRPort)
+	connected, err = emulator.Connect(vport.fcrPort)
 	assert.Equal(t, err, nil)
 	assert.True(t, connected)
 

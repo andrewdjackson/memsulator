@@ -1,94 +1,118 @@
 package responder
 
 import (
+	"context"
 	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 )
 
+const ECU_PORT = "/ttyecu"
+const FCR_PORT = "/ttycodereader"
+const SOCAT_EXE = "socat"
+
 type VirtualSerialPort struct {
-	homefolder      string
-	ECUPort         string
-	FCRPort         string
+	homeFolder      string
+	ecuPort         string
+	fcrPort         string
 	virtualPortChan chan bool
-	Connected       bool
 }
 
 func NewVirtualSerialPort() *VirtualSerialPort {
-	vserial := &VirtualSerialPort{}
-	vserial.homefolder, _ = homedir.Dir()
-	vserial.ECUPort = filepath.ToSlash(vserial.homefolder + "/ttyecu")
-	vserial.FCRPort = filepath.ToSlash(vserial.homefolder + "/ttycodereader")
-	vserial.virtualPortChan = make(chan bool)
-	vserial.Connected = false
+	vs := &VirtualSerialPort{}
+	vs.homeFolder, _ = homedir.Dir()
+	vs.ecuPort = filepath.ToSlash(vs.homeFolder + ECU_PORT)
+	vs.fcrPort = filepath.ToSlash(vs.homeFolder + FCR_PORT)
+	vs.virtualPortChan = make(chan bool)
 
-	// create the virtual serial ports
-	// this runs as a go routine as it waits for the file to be
-	// created and send a response over the channel to signal
-	// creation complete
-	go vserial.CreateVirtualPorts()
+	return vs
+}
 
-	// this blocks until the port is ready
-	var ready bool
-	ready = <-vserial.virtualPortChan
+func (vs *VirtualSerialPort) CreateVirtualPorts() error {
+	var err error
 
-	if ready {
-		vserial.Connected = true
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*80))
+	defer cancel()
+
+	group, ctx := errgroup.WithContext(ctx)
+
+	group.Go(func() error {
+		return vs.createVirtualSerialPorts()
+	})
+
+	group.Go(func() error {
+		vs.waitForPort()
+		return nil
+	})
+
+	if err = group.Wait(); err != nil {
+		log.Errorf("error creating virtual serial ports (%s)", err)
+	} else {
 		log.Infof("virtual serial port created")
 	}
-
-	return vserial
-}
-
-func (vserial *VirtualSerialPort) CreateVirtualPorts() {
-	if err := vserial.createVirtualSerialPorts(); err == nil {
-		vserial.waitForPort()
-	}
-}
-
-func (vserial *VirtualSerialPort) createVirtualSerialPorts() error {
-	var cmd *exec.Cmd
-	log.Infof("creating virtual ports")
-
-	// socat -d -d pty,link=ttycodereader,raw,echo=0 pty,link=ttyecu,raw,echo=0"
-	binary, lookErr := exec.LookPath("socat")
-	if lookErr != nil {
-		log.Warnf("unable to find socat command, brew install socat? (%s)", lookErr)
-		return lookErr
-	}
-
-	args := []string{"-d", "-d", "pty,link='" + vserial.FCRPort + "',cfmakeraw,ignbrk=1,igncr=1,ignpar=1", "pty,link='" + vserial.ECUPort + "',cfmakeraw,ignbrk=1,igncr=1,ignpar=1"}
-	env := os.Environ()
-	cmd = exec.Command(binary)
-	cmd.Args = args
-	cmd.Env = env
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Start()
-
-	if err != nil {
-		log.Errorf("cmd.Run() failed with %s", err)
-	}
-
-	log.Infof("created virtual serial ports (%s)", cmd.String())
 
 	return err
 }
 
-func (vserial *VirtualSerialPort) waitForPort() {
+func (vs *VirtualSerialPort) createVirtualSerialPorts() error {
+	var err error
+	var path string
+
+	log.Infof("creating virtual ports")
+
+	if path, err = findSocat(); err == nil {
+		cmdline := vs.buildCommandLine(path)
+		if err = cmdline.Start(); err != nil {
+			log.Errorf("cmd.Run() failed with %s", err)
+		}
+
+		log.Infof("created virtual serial ports (%s)", cmdline.String())
+	}
+
+	return err
+}
+
+func findSocat() (string, error) {
+	var err error
+	var path string
+
+	if path, err = exec.LookPath(SOCAT_EXE); err != nil {
+		log.Errorf("unable to find socat command, brew install socat? (%s)", err)
+	}
+
+	return path, err
+}
+
+// create the socat command line as follows
+// socat -d -d pty, link=ttycodereader, cfmakeraw, ignbrk=1, igncr=1, ignpar=1, pty, link=ttyecu, cfmakeraw, ignbrk=1, igncr=1, ignpar=1
+func (vs *VirtualSerialPort) buildCommandLine(socatPath string) *exec.Cmd {
+	args := []string{"-d", "-d", "pty,link='" + vs.fcrPort + "',cfmakeraw,ignbrk=1,igncr=1,ignpar=1", "pty,link='" + vs.ecuPort + "',cfmakeraw,ignbrk=1,igncr=1,ignpar=1"}
+	env := os.Environ()
+	cmdline := exec.Command(socatPath)
+
+	cmdline.Args = args
+	cmdline.Env = env
+	cmdline.Stdout = os.Stdout
+	cmdline.Stderr = os.Stderr
+
+	return cmdline
+}
+
+func (vs *VirtualSerialPort) waitForPort() {
 	for {
-		if vserial.fileExists(vserial.ECUPort) {
-			log.Infof("virtual serial ports ready")
-			vserial.virtualPortChan <- true
+		if vs.fileExists(vs.ecuPort) {
 			break
 		}
 	}
+
+	log.Infof("virtual serial port verified")
 }
 
-func (vserial *VirtualSerialPort) fileExists(name string) bool {
+func (vs *VirtualSerialPort) fileExists(name string) bool {
 	if _, err := os.Stat(name); err != nil {
 		if os.IsNotExist(err) {
 			return false

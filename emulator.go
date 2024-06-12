@@ -5,6 +5,7 @@ import (
 	"github.com/andrewdjackson/memsulator/loader"
 	"github.com/andrewdjackson/memsulator/responder"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 func main() {
@@ -13,19 +14,35 @@ func main() {
 	flag.Parse()
 
 	scenario := loader.NewScenario()
-	scenario.Load(*file)
+	if err := scenario.Load(*file); err == nil {
 
-	playback := loader.NewPlayback(scenario)
-	playback.Start()
+		if isVirtualSerialPort(*port) {
+			if err = createVirtualSerialPort(); err != nil {
+				log.Fatalf("unable to connect (%s)", err)
+			}
+		}
 
-	emulator := responder.NewEmulator(playback)
-	if connected, err := emulator.Connect(*port); err == nil {
-		if connected {
-			go emulator.Listen()
+		playback := loader.NewPlayback(scenario)
+		playback.Start()
 
-			select {}
-		} else {
-			log.Fatalf("unable to connect (%s)", err)
+		emulator := responder.NewEmulator(playback)
+		if connected, err := emulator.Connect(*port); err == nil {
+			if connected {
+				go emulator.Listen()
+
+				select {}
+			} else {
+				log.Fatalf("unable to connect (%s)", err)
+			}
 		}
 	}
+}
+
+func isVirtualSerialPort(port string) bool {
+	return strings.HasSuffix(port, "ttycodereader")
+}
+
+func createVirtualSerialPort() error {
+	virtualPort := responder.NewVirtualSerialPort()
+	return virtualPort.CreateVirtualPorts()
 }
